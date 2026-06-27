@@ -19,6 +19,7 @@ const SEED_BRANDS: SeedBrand[] = [
       { platform: "instagram", handle: "@shiseido" },
       { platform: "twitter", handle: "@shiseido_corp" },
       { platform: "tiktok", handle: "@shiseido" },
+      { platform: "meta_ads", handle: "Shiseido" },
     ],
   },
   {
@@ -27,6 +28,12 @@ const SEED_BRANDS: SeedBrand[] = [
     accounts: [
       { platform: "instagram", handle: "@skii" },
       { platform: "tiktok", handle: "@skii" },
+      {
+        platform: "meta_ads",
+        handle: "SK-II",
+        profileUrl:
+          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=210782685643962&media_type=all",
+      },
     ],
   },
   {
@@ -43,6 +50,12 @@ const SEED_BRANDS: SeedBrand[] = [
     accounts: [
       { platform: "instagram", handle: "@canmaketokyo" },
       { platform: "tiktok", handle: "@canmaketokyo" },
+      {
+        platform: "meta_ads",
+        handle: "CANMAKE",
+        profileUrl:
+          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=157974871060271&media_type=all",
+      },
     ],
   },
   {

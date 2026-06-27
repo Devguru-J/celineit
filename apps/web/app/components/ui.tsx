@@ -56,7 +56,7 @@ export function MediaImage({
   className?: string;
 }) {
   if (!src) return <MediaPlaceholder seed={seed} format={format ?? undefined} className={className} />;
-  const proxied = src.startsWith("http") ? `/img?u=${encodeURIComponent(src)}` : src;
+  const proxied = proxy(src);
   return (
     <div className={`relative bg-surface-variant overflow-hidden ${className}`}>
       <img
@@ -78,8 +78,11 @@ export function MediaImage({
   );
 }
 
+// CDN 핫링크 차단 호스트만 프록시 경유. 우리 저장소(Supabase Storage 등) URL은 직접 로드.
+const CDN_RE = /cdninstagram\.com|fbcdn\.net|twimg\.com|tiktokcdn|pstatp\.com/i;
 function proxy(url: string): string {
-  return url.startsWith("http") ? `/img?u=${encodeURIComponent(url)}` : url;
+  if (!url.startsWith("http")) return url;
+  return CDN_RE.test(url) ? `/img?u=${encodeURIComponent(url)}` : url;
 }
 
 // 영상 재생 (프록시 경유, Range 지원). poster 로 커버 이미지 표시.

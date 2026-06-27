@@ -11,7 +11,7 @@ export type AdFormat = "image" | "video" | "carousel";
 // Apify actor 기본값 — 환경변수(APIFY_ACTOR_<PLATFORM>)로 override 가능.
 // 실제 actor ID/slug는 계정 연결 시점에 확정·검증한다.
 export const DEFAULT_APIFY_ACTORS: Record<Platform, string | null> = {
-  meta_ads: "curious_coder~facebook-ads-library-scraper",
+  meta_ads: "apify~facebook-ads-scraper",
   instagram: "apify~instagram-scraper",
   twitter: "apidojo~tweet-scraper",
   tiktok: "clockworks~tiktok-scraper",
@@ -28,6 +28,9 @@ export interface NormalizedAd {
   mediaUrls: string[];
   // 이 수집 시점에 광고가 활성으로 관측되었는지
   seenActive: boolean;
+  // 플랫폼이 제공하는 실제 광고 시작/종료일 (Meta Ad Library). 있으면 longevity 계산에 사용.
+  startDate?: string | null;
+  endDate?: string | null;
   raw: unknown;
 }
 

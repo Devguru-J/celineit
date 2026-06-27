@@ -42,6 +42,10 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
 
   // ── 광고 upsert + presence + longevity ──
   for (const ad of result.ads) {
+    // Meta Ad Library 처럼 실제 광고 기간이 있으면 그걸 사용, 없으면 관측일 기준
+    const firstSeen = ad.startDate ?? date;
+    const lastSeen = ad.endDate ?? date;
+
     const [row] = await db
       .insert(adsTable)
       .values({
@@ -51,8 +55,8 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
         format: ad.format,
         destinationUrl: ad.destinationUrl,
         landingDomain: ad.landingDomain,
-        firstSeen: date,
-        lastSeen: date,
+        firstSeen,
+        lastSeen,
         isActive: ad.seenActive,
         daysActive: 0,
         raw: ad.raw,
@@ -60,7 +64,9 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
       .onConflictDoUpdate({
         target: [adsTable.brandAccountId, adsTable.platformAdId],
         set: {
-          lastSeen: date,
+          // 실제 시작일이 있을 때만 firstSeen 갱신 (스냅샷 모델에선 최초 관측일 유지)
+          ...(ad.startDate ? { firstSeen } : {}),
+          lastSeen,
           isActive: ad.seenActive,
           adCopy: ad.adCopy,
           format: ad.format,
@@ -83,7 +89,15 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
         set: { wasActive: ad.seenActive },
       });
 
-    await recomputeDaysActive(db, row.id);
+    if (ad.startDate) {
+      // 실제 기간 기반 longevity (시작~종료 일수)
+      await db
+        .update(adsTable)
+        .set({ daysActive: daysBetween(firstSeen, lastSeen) + 1 })
+        .where(eq(adsTable.id, row.id));
+    } else {
+      await recomputeDaysActive(db, row.id);
+    }
     stats.mediaLinked += await linkMedia(db, "ad", row.id, ad.mediaUrls);
   }
 
@@ -198,6 +212,11 @@ async function recomputeDaysActive(db: Database, adId: string): Promise<void> {
       daysActive: sql`(select count(*)::int from ${adPresenceDaily} where ${adPresenceDaily.adId} = ${adId} and ${adPresenceDaily.wasActive} = true)`,
     })
     .where(eq(adsTable.id, adId));
+}
+
+function daysBetween(a: string, b: string): number {
+  const ms = new Date(b).getTime() - new Date(a).getTime();
+  return Math.max(0, Math.round(ms / 86_400_000));
 }
 
 async function linkMedia(

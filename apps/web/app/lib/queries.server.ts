@@ -33,11 +33,19 @@ async function firstMediaByOwner(ownerType: "ad" | "post", ownerIds: string[]) {
   const db = getDb();
   if (ownerIds.length === 0) return new Map<string, string>();
   const rows = await db
-    .select({ ownerId: mediaAssets.ownerId, url: mediaAssets.originalUrl })
+    .select({ ownerId: mediaAssets.ownerId, url: mediaAssets.originalUrl, stored: mediaAssets.r2Key, kind: mediaAssets.kind })
     .from(mediaAssets)
     .where(and(eq(mediaAssets.ownerType, ownerType), inArray(mediaAssets.ownerId, ownerIds)));
+  // 썸네일은 이미지 우선 (영상 URL이 첫 미디어면 회색이 되므로). 없으면 첫 미디어.
+  const best = new Map<string, { url: string; isImage: boolean }>();
+  for (const r of rows) {
+    const url = r.stored ?? r.url;
+    const isImage = r.kind === "image";
+    const cur = best.get(r.ownerId);
+    if (!cur || (isImage && !cur.isImage)) best.set(r.ownerId, { url, isImage });
+  }
   const map = new Map<string, string>();
-  for (const r of rows) if (!map.has(r.ownerId)) map.set(r.ownerId, r.url);
+  for (const [k, v] of best) map.set(k, v.url);
   return map;
 }
 
@@ -325,10 +333,11 @@ export async function getTrends(slug?: string) {
 
 export async function getItemDetail(kind: "post" | "ad", id: string) {
   const db = getDb();
-  const media = await db
-    .select({ url: mediaAssets.originalUrl, kind: mediaAssets.kind })
+  const mediaRows = await db
+    .select({ url: mediaAssets.originalUrl, stored: mediaAssets.r2Key, kind: mediaAssets.kind })
     .from(mediaAssets)
     .where(and(eq(mediaAssets.ownerType, kind), eq(mediaAssets.ownerId, id)));
+  const media = mediaRows.map((m) => ({ url: m.stored ?? m.url, kind: m.kind }));
 
   if (kind === "post") {
     const [p] = await db

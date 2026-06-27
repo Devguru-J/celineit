@@ -5,6 +5,7 @@
   "scripts": {
     "collect": "tsx src/runner.ts",
     "seed": "tsx src/seed.ts",
+    "backfill": "tsx src/backfill-media.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy": "wrangler deploy",
