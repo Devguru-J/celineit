@@ -1,0 +1,514 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Celine Intelligence Platform - Unified Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        /* Custom Masonry-like behavior using column-count */
+        .masonry-grid {
+            column-count: 1;
+            column-gap: 16px;
+        }
+        @media (min-width: 768px) { .masonry-grid { column-count: 2; } }
+        @media (min-width: 1280px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 1600px) { .masonry-grid { column-count: 4; } }
+        
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 16px;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animation for interaction */
+        .hover-lift { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hover-lift:hover { transform: translateY(-4px); }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdbcc",
+                    "inverse-surface": "#2f3038",
+                    "background": "#fbf8ff",
+                    "surface-container-high": "#e8e7f1",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f4f2fd",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "inverse-primary": "#c3c0ff",
+                    "on-surface": "#1a1b22",
+                    "outline": "#777587",
+                    "on-primary-container": "#dad7ff",
+                    "surface-dim": "#dad9e3",
+                    "primary-fixed": "#e2dfff",
+                    "secondary": "#565e74",
+                    "on-tertiary-fixed": "#351000",
+                    "primary": "#3525cd",
+                    "tertiary": "#7e3000",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "inverse-on-surface": "#f1effa",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1a1b22",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-surface-variant": "#464555",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "surface-bright": "#fbf8ff",
+                    "surface-container": "#eeedf7",
+                    "secondary-container": "#dae2fd",
+                    "surface-variant": "#e3e1ec",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "surface-tint": "#4d44e3",
+                    "surface-container-highest": "#e3e1ec",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dae2fd",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary-container": "#a44100",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface": "#fbf8ff",
+                    "outline-variant": "#c7c4d8",
+                    "on-tertiary-container": "#ffd2be",
+                    "on-secondary-container": "#5c647a",
+                    "primary-container": "#4f46e5",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "card-gap": "16px",
+                    "stack-sm": "8px",
+                    "table-cell-px": "12px",
+                    "container-padding": "24px",
+                    "table-cell-py": "10px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Inter"],
+                    "metric-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "metric-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-muted": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "metric-lg": ["36px", {"lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "600"}],
+                    "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "metric-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-muted": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar from JSON -->
+<aside class="fixed left-0 top-0 h-full w-[240px] border-r border-outline-variant bg-surface flex flex-col py-24 px-8 z-50">
+<div class="mb-10 px-4">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Celine</h1>
+<p class="text-on-surface-variant font-body-sm text-[12px] opacity-70">Intelligence Platform</p>
+</div>
+<nav class="flex flex-col gap-1 overflow-y-auto no-scrollbar">
+<!-- Summary -->
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Summary</span>
+</a>
+<!-- Feed (Active) -->
+<a class="flex items-center gap-3 px-4 py-2 text-primary font-semibold bg-primary-container/10 font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">rss_feed</span>
+<span>Feed</span>
+</a>
+<!-- Winning Ads -->
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">star</span>
+<span>Winning Ads</span>
+</a>
+<!-- Trends -->
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+<span>Trends</span>
+</a>
+<!-- Calendar -->
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span>Calendar</span>
+</a>
+<!-- Brands -->
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">domain</span>
+<span>Brands</span>
+</a>
+<!-- Admin -->
+<a class="flex items-center gap-3 px-4 py-2 mt-auto text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">settings_applications</span>
+<span>Admin/Runs</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[240px] min-h-screen">
+<!-- TopAppBar from JSON -->
+<header class="flex items-center justify-between h-16 px-6 bg-background border-b border-outline-variant sticky top-0 z-40">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Unified Feed</h2>
+<div class="flex items-center gap-6">
+<!-- Search Bar -->
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:outline-none focus:ring-1 focus:ring-primary w-64" placeholder="Search brands, ads, or content..." type="text">
+</div>
+<!-- Trailing Icons -->
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors cursor-pointer material-symbols-outlined">notifications</button>
+<button class="hover:text-primary transition-colors cursor-pointer material-symbols-outlined">help_outline</button>
+</div>
+<!-- Profile -->
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden cursor-pointer border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female digital marketing analyst in her late 20s, with a clean and bright corporate background. She has a neutral expression and is wearing a modern blue blazer. The photography style is high-key with soft diffused lighting, matching a clean B2B light-mode interface aesthetic with muted tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEN1xNVfqc8C8NJ2Bkx8f46utdi9z40YD1LW1b8htE9Uzi-XztqvVuJ5ir4d2RSClTlJ-XBOumO_jIrokL22iUkSefz_Xjhhnwy0EmQwvxoLy_Z6QxK-3QbuKOp8gKBwsV_JkUxcjTd8L_gDz-9luG-AMMsuteTutNbslikY8oRb82mIqyChKH8kKbbfqOGZ6Dcbj7gu_41fc0EyjBL4WHm3zab4g5E8UvBxT_L_Bo4rOFDmbcARiGOMxw6nZbv2GkZDPlCsdoTEM">
+</div>
+</div>
+</header>
+<!-- Persistent Filter Bar -->
+<section class="bg-surface border-b border-outline-variant px-6 py-4 sticky top-16 z-30 flex flex-wrap items-center gap-4">
+<!-- Platform Multi-select (Visual mock) -->
+<div class="flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-70 uppercase">Platform</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-primary text-white rounded-full text-body-sm font-medium flex items-center gap-1">Meta <span class="material-symbols-outlined text-[14px]">close</span></button>
+<button class="px-3 py-1 bg-surface-container border border-outline-variant text-on-surface-variant rounded-full text-body-sm hover:bg-surface-container-high">Instagram</button>
+<button class="px-3 py-1 bg-surface-container border border-outline-variant text-on-surface-variant rounded-full text-body-sm hover:bg-surface-container-high">TikTok</button>
+<button class="px-3 py-1 bg-surface-container border border-outline-variant text-on-surface-variant rounded-full text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">add</span> More
+                    </button>
+</div>
+</div>
+<!-- Brand -->
+<div class="h-10 w-px bg-outline-variant mx-2 hidden sm:block"></div>
+<div class="flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-70 uppercase">Brand</span>
+<select class="bg-transparent border-none text-body-sm font-medium p-0 focus:ring-0 cursor-pointer">
+<option>All Brands</option>
+<option>Nike</option>
+<option>Apple</option>
+<option>Glossier</option>
+</select>
+</div>
+<!-- Content Type -->
+<div class="h-10 w-px bg-outline-variant mx-2 hidden sm:block"></div>
+<div class="flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-70 uppercase">Content Type</span>
+<select class="bg-transparent border-none text-body-sm font-medium p-0 focus:ring-0 cursor-pointer">
+<option>All Content</option>
+<option>Ad</option>
+<option>Organic</option>
+</select>
+</div>
+<!-- Format -->
+<div class="h-10 w-px bg-outline-variant mx-2 hidden sm:block"></div>
+<div class="flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-70 uppercase">Format</span>
+<div class="flex items-center gap-3">
+<button class="text-primary material-symbols-outlined text-[20px]" title="Image">image</button>
+<button class="text-outline material-symbols-outlined text-[20px]" title="Video">videocam</button>
+<button class="text-outline material-symbols-outlined text-[20px]" title="Carousel">view_carousel</button>
+</div>
+</div>
+<!-- Date Range -->
+<div class="ml-auto flex items-center gap-2 px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span class="text-body-sm font-medium">Last 30 Days</span>
+<span class="material-symbols-outlined text-outline text-[18px]">expand_more</span>
+</div>
+</section>
+<!-- Content Canvas -->
+<div class="p-6">
+<div class="masonry-grid">
+<!-- Card 1 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="relative group">
+<img class="w-full aspect-[4/5] object-cover" data-alt="A high-fashion photography shot for a luxury brand's digital ad. The image shows a sleek, metallic handbag resting on a minimalist marble pedestal. The lighting is dramatic with deep shadows and sharp highlights, using a cool blue and silver color palette to evoke a sense of premium exclusivity and high-end modern design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCls6AWR7Hv0tp_4eUv02Mki9hADW_JjTyW0XVPpqkIjsYnLHa2NwxwQnI3vLgftEd0uqCsfw3pHkTeEsy-uBXdJTlL1j8MTAReMLsnBp_EY3vi8VgLBse6lR0njw1ehas1ygzDLX96pwCTeFzKrz2akd9gvW5cyQCuq5B_11npEXZ3AYXqNjg7UaSJeQCq_qy1VakGdrYYZFwg6C_bQIcF-4sPIb1u2Q8YxlQMoEk6ggxyQZrDORTZ80e4o3lwQJydCwnAyB5p4_E">
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-blue-600" style="font-variation-settings: 'FILL' 1;">face_nod</span> META
+                                </span>
+<span class="bg-primary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AD</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">L'Avenir Luxury</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 24, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<p class="text-body-sm line-clamp-2 text-on-surface">Experience the future of accessories with our latest FW24 collection. Hand-crafted in Milan.</p>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">favorite</span> 1.2k
+                                    </div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">chat_bubble</span> 84
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 45k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+<!-- Card 2 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="relative bg-black aspect-video flex items-center justify-center">
+<img class="w-full h-full object-cover opacity-80" data-alt="A vibrant and energetic TikTok style video thumbnail. A young creator is enthusiastically demonstrating a skincare product in a brightly lit, modern bathroom. The scene is filled with warm, natural sunlight, pastel pink accents, and dynamic motion blur. The overall aesthetic is approachable, authentic, and follows current social media trends with high saturation and clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFPUR-cOpcQk7ZZW0D61KX4JZaCoHard579wLQHSmlU6I1iMJ91RAayZAUyiwkW0C9_phG7v7PTKzfVxsshp6B5BgjcZzoeeYMPj-U-run3fBkgOqPav_mA5rmZrY3rg63Yu9ytC0KWcspFs0EorHNzQIWfZkuVwuzhw04XGw6Kmr_rpuGe8EqwMAfTMqnvrl3Qkhhc6HJ_Tq1-NOfPONAMfAbBA3HZSACabZAoA8cI86KM8w8prKftTjOqdOjKfBZ8LAgospNGNs">
+<span class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[48px] drop-shadow-md">play_circle</span>
+</span>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-pink-500">brand_family</span> TIKTOK
+                                </span>
+<span class="bg-secondary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ORGANIC</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">Glow Protocol</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 26, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<p class="text-body-sm line-clamp-2 text-on-surface">Finally sharing my 3-step nightly routine! #skincaretips #glowup #morningroutine</p>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">favorite</span> 12.8k
+                                    </div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">chat_bubble</span> 432
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 890k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+<!-- Card 3 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="relative">
+<img class="w-full aspect-square object-cover" data-alt="A clean, minimalist product lifestyle shot on Instagram. A pair of off-white athletic sneakers are neatly arranged on a textured concrete surface with a single Monstera leaf providing a touch of green. The lighting is soft and even, highlighting the materials and textures of the shoes. The aesthetic is modern, serene, and highly curated for a professional brand feed." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF0d4g1iFyqIWRYbi_-07xeOBEfmkxv2eCHphonpoMhZ52uNLEzKMiSfu3z84IqgKJEbd579Pf2GYBTgIVAAgYOFSu8IMMVIpH1qysKByAJLWomrMd_5iFnEw9UibTVsBZTEipKoE4DSMqlq8_xYuuilxQXkyv4uWiXUO6GGEoRXRfzwOHHhQqkE9hrPo-MD3-QexVKFuYgaTZJBbw9TXYuxy_LBK8oiUoza7HO-jGuquTKvj9KjBqFP9XfWwZqGEULIRKZ6JV7Bo">
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-purple-600">photo_camera</span> IG
+                                </span>
+<span class="bg-primary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AD</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">Stride Athletics</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 25, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<p class="text-body-sm line-clamp-2 text-on-surface">Engineered for the urban explorer. Discover our breathable knit series.</p>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">favorite</span> 3.1k
+                                    </div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">chat_bubble</span> 120
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 125k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+<!-- Card 4 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="p-4 bg-surface-container-low border-b border-outline-variant">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-sky-500">chat</span> X
+                                </span>
+<span class="bg-secondary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ORGANIC</span>
+</div>
+<p class="text-body-md font-medium text-on-surface italic">"Performance isn't just a metric; it's a culture. We are redefining the platform benchmark for SaaS analytics in 2024."</p>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">Celine Tech</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 27, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">favorite</span> 890
+                                    </div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">autorenew</span> 154
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 21k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+<!-- Card 5 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="relative">
+<img class="w-full aspect-[3/4] object-cover" data-alt="A colorful and bold graphic design for a modern beverage brand's carousel ad. The first frame shows a vibrant splash of citrus juice against a bright teal background, with bold sans-serif typography overlay. The lighting is crisp and commercial, with a high-energy and refreshing mood, utilizing a saturated palette of oranges, teals, and yellows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6M6s1xazziBFwz1l-KrLsmv5ZucnnU7DW1d-El_JDq7p9BrEuHVh2Y_CCgAtL3Pud4iwGC0ma_2DkziaIqm9rkhlpPWRyC_R2CS6HVos_Ya72bK7j0InW8vq6sS2F63zy7De3-1yeuBw9hrxM8Blg3uuep0DCZFRoVJbzL86EKzMqkCjN6tHBqDHx6orRpHDPtwzHB2PRqARPco2A-4kI8TLkfupbj8mEycjr392iHBZUHVEQQjWalKGYZq0FE6mOoCFKKtVnRaY">
+<div class="absolute bottom-3 right-3 bg-black/50 text-white text-[10px] px-2 py-1 rounded-md backdrop-blur-sm">1/5</div>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-purple-600">photo_camera</span> IG
+                                </span>
+<span class="bg-primary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AD</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">Zest Drinks</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 28, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<p class="text-body-sm line-clamp-2 text-on-surface">The new Citrus Surge is here. No sugar, all the kick. Swipe to see the flavors.</p>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">favorite</span> 5.6k
+                                    </div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">chat_bubble</span> 201
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 310k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+<!-- Card 6 -->
+<div class="masonry-item">
+<article class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover-lift shadow-sm">
+<div class="relative bg-surface-container h-48 flex flex-col items-center justify-center p-6 text-center">
+<span class="material-symbols-outlined text-primary text-[48px] mb-2 opacity-20">poll</span>
+<p class="text-body-md font-bold mb-4">Which feature is most important for your 2024 workflow?</p>
+<div class="w-full space-y-2">
+<div class="h-8 bg-primary/10 border border-primary/20 rounded flex items-center px-3 relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/20 w-[65%]"></div>
+<span class="relative text-[11px] font-bold">Real-time Analytics (65%)</span>
+</div>
+<div class="h-8 bg-surface border border-outline-variant rounded flex items-center px-3 relative overflow-hidden">
+<div class="absolute inset-0 bg-outline/10 w-[35%]"></div>
+<span class="relative text-[11px] font-bold">Multi-platform Sync (35%)</span>
+</div>
+</div>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="bg-white/90 backdrop-blur-sm text-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-blue-600" style="font-variation-settings: 'FILL' 1;">face_nod</span> META
+                                </span>
+<span class="bg-secondary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ORGANIC</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-[14px] font-bold">Celine Platform</h4>
+<p class="text-label-muted font-label-muted text-on-surface-variant">Oct 29, 2023</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">more_horiz</button>
+</div>
+<div class="pt-3 border-t border-outline-variant flex justify-between items-center text-outline">
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">how_to_reg</span> 2.4k votes
+                                    </div>
+</div>
+<div class="flex items-center gap-1 text-[12px]">
+<span class="material-symbols-outlined text-[16px]">visibility</span> 12k
+                                </div>
+</div>
+</div>
+</article>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction script -->
+<script>
+        // Simple hover effect augmentation
+        document.querySelectorAll('.masonry-item article').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.classList.add('shadow-md');
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('shadow-md');
+            });
+        });
+
+        // Toggle Platform Mock
+        const platformButtons = document.querySelectorAll('section button');
+        platformButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.innerText.includes('More') || btn.innerText.includes('Add')) return;
+                btn.classList.toggle('bg-primary');
+                btn.classList.toggle('text-white');
+                btn.classList.toggle('bg-surface-container');
+                btn.classList.toggle('text-on-surface-variant');
+            });
+        });
+    </script>
+</body></html>

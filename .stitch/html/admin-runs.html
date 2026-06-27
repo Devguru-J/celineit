@@ -1,0 +1,221 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Celine Intelligence Platform - Admin / Runs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2dfff; border-radius: 10px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbcc",
+                        "inverse-surface": "#2f3038",
+                        "background": "#fbf8ff",
+                        "surface-container-high": "#e8e7f1",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f4f2fd",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "inverse-primary": "#c3c0ff",
+                        "on-surface": "#1a1b22",
+                        "outline": "#777587",
+                        "on-primary-container": "#dad7ff",
+                        "surface-dim": "#dad9e3",
+                        "primary-fixed": "#e2dfff",
+                        "secondary": "#565e74",
+                        "on-tertiary-fixed": "#351000",
+                        "primary": "#3525cd",
+                        "tertiary": "#7e3000",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "inverse-on-surface": "#f1effa",
+                        "on-error-container": "#93000a",
+                        "on-background": "#1a1b22",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-surface-variant": "#464555",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-bright": "#fbf8ff",
+                        "surface-container": "#eeedf7",
+                        "secondary-container": "#dae2fd",
+                        "surface-variant": "#e3e1ec",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "surface-tint": "#4d44e3",
+                        "surface-container-highest": "#e3e1ec",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#dae2fd",
+                        "on-primary-fixed": "#0f0069",
+                        "tertiary-container": "#a44100",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#131b2e",
+                        "surface": "#fbf8ff",
+                        "outline-variant": "#c7c4d8",
+                        "on-tertiary-container": "#ffd2be",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#4f46e5",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "card-gap": "16px",
+                        "stack-sm": "8px",
+                        "table-cell-px": "12px",
+                        "container-padding": "24px",
+                        "table-cell-py": "10px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "metric-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "metric-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-muted": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "metric-lg": ["36px", {"lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "600"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "metric-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-muted": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col py-container-padding px-stack-sm z-50">
+<div class="mb-8 px-unit">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Celine</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Intelligence Platform</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Summary</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="rss_feed">rss_feed</span>
+<span class="font-body-md text-body-md">Feed</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="star">star</span>
+<span class="font-body-md text-body-md">Winning Ads</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="trending_up">trending_up</span>
+<span class="font-body-md text-body-md">Trends</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="calendar_month">calendar_month</span>
+<span class="font-body-md text-body-md">Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="domain">domain</span>
+<span class="font-body-md text-body-md">Brands</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded transition-colors text-primary font-semibold bg-primary-container/10" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings_applications">settings_applications</span>
+<span class="font-body-md text-body-md">Admin/Runs</span>
+</a>
+</nav>
+<div class="mt-auto px-unit pt-4 border-t border-outline-variant/30 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female data analyst with a clean, tech-focused background. The lighting is soft and neutral, consistent with a high-end SaaS platform aesthetic. She is wearing a professional blazer. The overall mood is modern, objective, and precise, mirroring a professional developer tool environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqwqzu7VrkAQILYy-onZD_91JRZ8MEpVl9VlVnndWDL0Js5B3Pqx1fWmaQp4p7D1Y8QsPPXOnx6xxWTbKe-rCbN-ngnwyI4GHnhGHRLg9Mc88yqqFwsWnk_s-uhdltLGBVv49ue-vD1tf9ySsbA0SmTOCRVvJp0UQKBmMYWRGtvXApLqjuAolyHBGqnHONScZysBf8Ie57E7lzgUj0XAYoUVjuNmfrsEGnJA23rp2wDaS-MatwsDmMIdJRsMuRxWy6rIdcNw8krQg">
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface">Celine User</span>
+<span class="font-label-muted text-label-muted text-on-surface-variant">Admin Level</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-[240px] flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar Component -->
+<header class="flex items-center justify-between h-16 px-container-padding bg-background border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Admin / Runs</h2>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="refresh">refresh</span>
+<span class="font-label-muted text-label-muted">Auto-refreshing in 45s</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-[18px]" data-icon="search">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:outline-none focus:border-primary transition-all w-64" placeholder="Search logs..." type="text">
+</div>
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors p-1" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors p-1" data-icon="help_outline">help_outline</button>
+</div>
+</div>
+</header>
+<!-- Scrollable Body -->
+<div class="flex-1 overflow-y-auto p-container-padding custom-scrollbar space-y-6">
+<!-- KPI Cards - Bento Style -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-card-gap">
+<!-- Runs Today -->
+<div class="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[120px]" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Runs Today</span>
+<div class="flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-primary">1,284</span>
+<span class="font-label-muted text-label-muted text-secondary">+12% vs yesterday</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-4">
+<div class="bg-primary h-full w-[75%] rounded-full"></div>
+</div>
+</div>
+<!-- Success Rate -->
+<div class="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[120px]" data-icon="check_circle">check_circle</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Success Rate</span>
+<div class="flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-on-surface">98%</span>
+<div class="px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-label-muted text-label-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] font-bold" data-icon="trending_up">trending_up</span>
+                            Optimal
+                        </div>
+</div>
+<div class="flex gap-1 mt-4">
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+                        &lt;</div></div></div></div></main></body></html>

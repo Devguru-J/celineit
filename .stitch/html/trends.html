@@ -1,0 +1,409 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Celine - Trends Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdbcc",
+                    "inverse-surface": "#2f3038",
+                    "background": "#fbf8ff",
+                    "surface-container-high": "#e8e7f1",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f4f2fd",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "inverse-primary": "#c3c0ff",
+                    "on-surface": "#1a1b22",
+                    "outline": "#777587",
+                    "on-primary-container": "#dad7ff",
+                    "surface-dim": "#dad9e3",
+                    "primary-fixed": "#e2dfff",
+                    "secondary": "#565e74",
+                    "on-tertiary-fixed": "#351000",
+                    "primary": "#3525cd",
+                    "tertiary": "#7e3000",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "inverse-on-surface": "#f1effa",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1a1b22",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-surface-variant": "#464555",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "surface-bright": "#fbf8ff",
+                    "surface-container": "#eeedf7",
+                    "secondary-container": "#dae2fd",
+                    "surface-variant": "#e3e1ec",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "surface-tint": "#4d44e3",
+                    "surface-container-highest": "#e3e1ec",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dae2fd",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary-container": "#a44100",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface": "#fbf8ff",
+                    "outline-variant": "#c7c4d8",
+                    "on-tertiary-container": "#ffd2be",
+                    "on-secondary-container": "#5c647a",
+                    "primary-container": "#4f46e5",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "card-gap": "16px",
+                    "stack-sm": "8px",
+                    "table-cell-px": "12px",
+                    "container-padding": "24px",
+                    "table-cell-py": "10px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["Inter"],
+                    "metric-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "metric-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-muted": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "metric-lg": ["36px", {"lineHeight": "40px", "letterSpacing": "-0.04em", "fontWeight": "600"}],
+                    "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "metric-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-muted": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .chart-container {
+            position: relative;
+            background-image: radial-gradient(circle at 2px 2px, rgba(119, 117, 135, 0.1) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e3e1ec; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c7c4d8; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-white">
+<!-- SideNavBar Component -->
+<nav class="fixed left-0 top-0 h-full w-[240px] border-r border-outline-variant bg-surface flex flex-col py-container-padding px-stack-sm z-50">
+<div class="mb-10 px-stack-sm">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">Celine</h1>
+<p class="text-label-muted text-on-surface-variant">Intelligence Platform</p>
+</div>
+<div class="flex flex-col gap-unit">
+<!-- Nav Items -->
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Summary</span>
+</a>
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">rss_feed</span>
+<span class="font-body-md">Feed</span>
+</a>
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-body-md">Winning Ads</span>
+</a>
+<!-- ACTIVE TAB: Trends -->
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-primary font-semibold bg-primary-container/10 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-body-md">Trends</span>
+</a>
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-body-md">Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">domain</span>
+<span class="font-body-md">Brands</span>
+</a>
+<a class="flex items-center gap-3 px-stack-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors active:scale-[0.98] mt-4" href="#">
+<span class="material-symbols-outlined">settings_applications</span>
+<span class="font-body-md">Admin/Runs</span>
+</a>
+</div>
+<div class="mt-auto px-stack-sm flex items-center gap-3 pt-4 border-t border-outline-variant">
+<img class="w-8 h-8 rounded-full bg-surface-variant object-cover" data-alt="A professional studio portrait of a female creative director in a minimalist white office setting. She has a confident, neutral expression, soft natural lighting, and high-fashion editorial aesthetic with subtle cool-toned color grading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwd8Ea5PeG9NCeYA4-h6059IR3pma-shR2GryQKcG82hI8hUo3GeYmfO35yxBBv-wyTLxSKQzFoI7FnYkVKm0_iq2sEW2MhlXOK6VNq6ZqYeIVfG4RZ0ZdyqkuWXY_GbpkEFrd0_NnCDA1L1nKvTipMcsFu1LPnXxF1qfhGUotIdQVx4IBzipTFExQi4LKn5MqRCLrAmwx-TNFb8V3NYVDMYAawcnIYbEfDV1w02NEknnjxw7awQh3ICg-h0_QYGXh04hl-lSoxac">
+<div>
+<p class="font-label-caps text-on-surface">Celine Logo</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Premium Plan</p>
+</div>
+</div>
+</nav>
+<!-- TopAppBar Component -->
+<header class="fixed top-0 right-0 left-[240px] h-16 bg-background flex items-center justify-between px-container-padding border-b border-outline-variant z-40">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">Trends</span>
+<span class="h-4 w-[1px] bg-outline-variant"></span>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">domain</span>
+<span class="font-body-md">Brands</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+<span class="font-body-md font-semibold text-on-surface">Nike</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-1.5 text-body-sm w-64 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all" placeholder="Search brands or metrics..." type="text">
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors cursor-pointer"><span class="material-symbols-outlined">notifications</span></button>
+<button class="hover:text-primary transition-colors cursor-pointer"><span class="material-symbols-outlined">help_outline</span></button>
+<div class="h-8 w-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up of a stylized user avatar with a soft gradient background in blue and indigo. Minimalist and professional representation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4A5ndm5xZiczPy90GzMagfDGg56OCFuVyi7nELm0Bv0_DIENBUuNf7MSk9gkVVYti9qBgnlK0m5h4lnhT6y5SA8WBZlkMD3YmMRVT1J5XlT7-usBIc0ayrsKX_s8njBdvYKlh6zjU-Wbl2jN0M7z5e80Jrf79dfnKcqjqt0tVGvEysu7pAFKJP99sW5822qqsrdmFJrMcy8GJJxQnH4J43oFVJNgKKU6130m-ZVBf5cY3plmWmxG5-W3nPsnaRI7aZiVjvC6FRVA">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen">
+<div class="p-container-padding space-y-card-gap">
+<!-- Brand Detail Header Card -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-card-gap">
+<div class="md:col-span-1 bg-surface border border-outline-variant p-5 rounded-lg flex items-center gap-4">
+<div class="w-14 h-14 bg-on-surface flex items-center justify-center rounded-lg shadow-sm">
+<img class="w-10 h-10 object-contain brightness-0 invert" data-alt="A clean, minimalist vector logo of a famous athletic brand in high-contrast black and white. The aesthetic is sharp, powerful, and professional, reflecting a premium sports brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPrhyI1uFmHIOVVbVmMjOhEgFeYXHGaQwjkRWWiyFBqYAY4_tXaEGOOX9K5SWq1lf35alCg_kAeVYgId7tsyV4z7uOPrfQHHJ0c9aPMqLavsKg7fDkjMX8oCnAuCCIYX9-dh60oSTbpjQdPV7gDGkiaRmi9P7kXgfIko_BvOhl7U2BaLNcVWLHRujU7iqAbREoWSZ-tes28EnAFvLY9HuoAgvNFwzNlMRpNwGUK1vZZL0smRfNbO-_RN3pwT2cjcsIm0Cs6trDrkg">
+</div>
+<div>
+<h2 class="font-metric-md text-metric-md text-on-surface">Nike</h2>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded text-[10px] font-bold uppercase tracking-tight">Instagram</span>
+</div>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-5 rounded-lg">
+<p class="text-label-muted text-on-surface-variant flex items-center gap-1 uppercase">
+<span class="material-symbols-outlined text-[14px]">groups</span> Total Followers
+                    </p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-metric-lg text-metric-lg text-on-surface">2.4M</span>
+<span class="text-green-600 font-label-caps text-[12px] flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 1.2%
+                        </span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-5 rounded-lg">
+<p class="text-label-muted text-on-surface-variant flex items-center gap-1 uppercase">
+<span class="material-symbols-outlined text-[14px]">bolt</span> 30-day Avg Engagement
+                    </p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-metric-lg text-metric-lg text-on-surface">4.2%</span>
+<span class="text-red-600 font-label-caps text-[12px] flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> 0.3%
+                        </span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant p-5 rounded-lg">
+<p class="text-label-muted text-on-surface-variant flex items-center gap-1 uppercase">
+<span class="material-symbols-outlined text-[14px]">bar_chart</span> Benchmark Status
+                    </p>
+<div class="flex items-center gap-2 mt-3">
+<div class="flex-1 h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 78%"></div>
+</div>
+<span class="font-label-caps text-on-surface">High</span>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 italic">Top 5% of Lifestyle Category</p>
+</div>
+</section>
+<!-- Main Detailed Line Chart -->
+<section class="bg-surface border border-outline-variant rounded-lg overflow-hidden flex flex-col">
+<div class="px-5 py-4 border-b border-outline-variant flex items-center justify-between">
+<div>
+<h3 class="font-headline-sm text-on-surface">Daily Follower Growth</h3>
+<p class="text-label-muted text-on-surface-variant">March 01 - March 30, 2024</p>
+</div>
+<div class="flex bg-surface-container-low border border-outline-variant rounded-lg p-1">
+<button class="px-4 py-1 text-label-caps rounded-md text-on-surface-variant hover:text-on-surface transition-colors">7D</button>
+<button class="px-4 py-1 text-label-caps rounded-md bg-white shadow-sm text-primary">30D</button>
+<button class="px-4 py-1 text-label-caps rounded-md text-on-surface-variant hover:text-on-surface transition-colors">90D</button>
+</div>
+</div>
+<div class="p-5 h-[320px] chart-container relative overflow-hidden">
+<!-- Faux SVG Line Chart -->
+<svg class="w-full h-full drop-shadow-sm" viewBox="0 0 1000 300">
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#3525cd" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#3525cd" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<path d="M0,250 Q100,240 200,220 T400,180 T600,140 T800,100 T1000,80 L1000,300 L0,300 Z" fill="url(#chartGradient)"></path>
+<path d="M0,250 Q100,240 200,220 T400,180 T600,140 T800,100 T1000,80" fill="none" stroke="#3525cd" stroke-width="2.5"></path>
+<!-- Data Points -->
+<circle cx="200" cy="220" fill="white" r="4" stroke="#3525cd" stroke-width="2"></circle>
+<circle cx="400" cy="180" fill="white" r="4" stroke="#3525cd" stroke-width="2"></circle>
+<circle cx="600" cy="140" fill="white" r="4" stroke="#3525cd" stroke-width="2"></circle>
+<circle cx="800" cy="100" fill="white" r="4" stroke="#3525cd" stroke-width="2"></circle>
+<circle cx="1000" cy="80" fill="white" r="4" stroke="#3525cd" stroke-width="2"></circle>
+</svg>
+<!-- Tooltip Faux -->
+<div class="absolute top-[80px] right-[10%] bg-inverse-surface text-inverse-on-surface px-3 py-2 rounded shadow-lg text-[12px] border border-white/10">
+<p class="font-bold">Mar 28, 2024</p>
+<p class="text-white/70">2,402,119 followers</p>
+<p class="text-green-400 font-semibold">+4,210 today</p>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+<!-- Secondary: Engagement Rate Bar Chart -->
+<section class="lg:col-span-1 bg-surface border border-outline-variant rounded-lg p-5">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-sm text-on-surface">Engagement Trend</h3>
+<span class="material-symbols-outlined text-on-surface-variant">info</span>
+</div>
+<div class="flex items-end justify-between h-48 gap-2">
+<!-- Bars -->
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[40%] transition-all hover:bg-primary-container/40 cursor-help" title="Week 1: 3.2%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[65%] transition-all hover:bg-primary-container/40 cursor-help" title="Week 2: 4.8%"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[85%] transition-all hover:brightness-110 cursor-help" title="Week 3: 5.9%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[55%] transition-all hover:bg-primary-container/40 cursor-help" title="Week 4: 4.2%"></div>
+</div>
+<div class="flex justify-between mt-4 text-label-muted text-on-surface-variant">
+<span>W1</span><span>W2</span><span class="font-bold text-primary">W3</span><span>W4</span>
+</div>
+<p class="mt-6 text-body-sm text-on-surface-variant">
+                        Engagement peaked in <span class="text-on-surface font-semibold">Week 3</span> following the 'Air Max' campaign launch.
+                    </p>
+</section>
+<!-- Best Performing Posts Table -->
+<section class="lg:col-span-2 bg-surface border border-outline-variant rounded-lg overflow-hidden">
+<div class="px-5 py-4 border-b border-outline-variant flex items-center justify-between">
+<h3 class="font-headline-sm text-on-surface">Best Performing Posts</h3>
+<button class="text-primary font-label-caps flex items-center gap-1 hover:underline">
+                            View All <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-label-caps text-on-surface-variant">
+<tr>
+<th class="px-table-cell-px py-3 font-semibold">Media</th>
+<th class="px-table-cell-px py-3 font-semibold">Post Date</th>
+<th class="px-table-cell-px py-3 font-semibold text-right">Engagement</th>
+<th class="px-table-cell-px py-3 font-semibold text-right">Reach</th>
+<th class="px-table-cell-px py-3 font-semibold text-center">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-table-cell-px py-table-cell-py">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up photograph of a high-tech running shoe in vibrant neon colors, captured with sharp focus and cinematic lighting. The aesthetic is futuristic and commercial, fitting a top-tier athletic brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDc_XjSP4ShytMr89RrOEEtx7f-JJ8k6mJA90cv5yIK5ZR0RywZPIUv32yShxposln7AGEgtuGBH_fKq7a6LIpqXq3TdR0g5MwKDqE571PWULHcbeprcQj0P2U-ZPnkj0VBKMjZ9NL4kn8qo9eSKLMdmCTOfU0wLgistuiQ1bxQcDRL28W4PyrsJC7S8-CiyCUEOCFzJuyzHYxwIBb9o-c0qC7lv1LuYikYelr8V117HkH0psb7ra85vbomq-6WpnTg4gFyeTHjg5Q">
+</div>
+<div class="max-w-[150px]">
+<p class="font-body-md text-on-surface truncate">Air Max 2024 Launch</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Video • 0:15</p>
+</div>
+</div>
+</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant">Mar 12, 2024</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface font-semibold text-right">8.42%</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant text-right">1.2M</td>
+<td class="px-table-cell-px py-table-cell-py text-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">VIRAL</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-table-cell-px py-table-cell-py">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Atmospheric wide shot of an athlete running through a misty urban park at dawn. The lighting is cool-toned and moody, emphasizing the movement and grit of a high-performance training session." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsSo5Thu5meo1ykAkskEScW5sYPcM9A2P1ovGiKZueq1aQg0WP2xSY9P25oW7NmcZ6l3Ip2edDO1-vQ4XYyEb5jYHl_UXSOvNFHVR6gekFkTqhxnU23c1bet79wg_PNvRe8LBbxDkDGmY5_lqKNGih-HufsHDBxMxdPPr0X3BsFEKfDmvCmQiYsA1Cs7GX9ZTqawqZn6BEjxUg3zics5PkKqhl5YB_vpd8D3nVIrXQMOI1jRHRLo-8VVuRnwcsLsHzY_vC0oOSrZc">
+</div>
+<div class="max-w-[150px]">
+<p class="font-body-md text-on-surface truncate">Early Morning Run</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Image</p>
+</div>
+</div>
+</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant">Mar 05, 2024</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface font-semibold text-right">6.11%</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant text-right">840K</td>
+<td class="px-table-cell-px py-table-cell-py text-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">STABLE</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-table-cell-px py-table-cell-py">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A studio product shot of a reusable water bottle with a sleek matte finish, placed on a mirrored surface. Minimalist composition with soft indigo lighting and sharp reflections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgMHfadLAL65qn974yjhgaNTt8MKz89CV7td7X9zOA9c4KcBjLmk6gEB7BZ8B3t5y_MMzWi7rnwq7rv0UdOTb0SvLb1-q8O1DdV8IjvZYOBRe_3D7by7iLrQ9K30_mg42ONEgUYJyZyTqT2LH3iYfvZU3Jz5BsQV2nQfebNJhcPGICOl74U6BZXpQ6ovo62h9m-t2sF8AvduPfA-ORdVDvXzpJC7emtxM21QlO1VdBwy-NjkHGSginK10KsgbVo5xZpsi4s9ARvXU">
+</div>
+<div class="max-w-[150px]">
+<p class="font-body-md text-on-surface truncate">Eco-Series Collab</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Carousel</p>
+</div>
+</div>
+</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant">Mar 22, 2024</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface font-semibold text-right">5.88%</td>
+<td class="px-table-cell-px py-table-cell-py text-body-sm text-on-surface-variant text-right">650K</td>
+<td class="px-table-cell-px py-table-cell-py text-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">STABLE</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Contextual FAB for quick report export (only on analytics dashboards) -->
+<button class="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group">
+<span class="material-symbols-outlined">download</span>
+<span class="absolute right-16 bg-inverse-surface text-inverse-on-surface px-3 py-1 rounded text-label-caps opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Export PDF</span>
+</button>
+<script>
+        // Simple micro-interaction for the sidebar and header
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if(!this.classList.contains('text-primary')) {
+                    // Logic for visual feedback only since this is a static prototype
+                    console.log('Navigating to:', this.innerText.trim());
+                }
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>

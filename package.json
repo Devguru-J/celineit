@@ -1,0 +1,15 @@
+{
+  "name": "celineit",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Celine Intelligence — competitor brand monitoring (internal tool)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @celine/web",
+    "build": "npm run build -w @celine/web",
+    "start": "npm run start -w @celine/web"
+  }
+}
