@@ -7,3 +7,7 @@ build/
 .env
 .DS_Store
 .playwright-mcp/
+
+# 스크린샷/임시 이미지
+*.jpeg
+/*.png
