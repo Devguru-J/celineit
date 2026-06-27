@@ -56,10 +56,11 @@ export function MediaImage({
   className?: string;
 }) {
   if (!src) return <MediaPlaceholder seed={seed} format={format ?? undefined} className={className} />;
+  const proxied = src.startsWith("http") ? `/img?u=${encodeURIComponent(src)}` : src;
   return (
     <div className={`relative bg-surface-variant overflow-hidden ${className}`}>
       <img
-        src={src}
+        src={proxied}
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"

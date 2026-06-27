@@ -8,5 +8,6 @@ export default [
   route("calendar", "routes/calendar.tsx"),
   route("brands", "routes/brands.tsx"),
   route("item/:kind/:id", "routes/item.tsx"),
+  route("img", "routes/img.tsx"),
   route("admin/runs", "routes/admin-runs.tsx"),
 ] satisfies RouteConfig;
