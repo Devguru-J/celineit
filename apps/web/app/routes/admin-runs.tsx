@@ -1,49 +1,55 @@
+import { useLoaderData } from "react-router";
 import { Card, CardHeader, PlatformChip } from "~/components/ui";
-import { runs, runSummary, type RunStatus } from "~/mock/data";
+import { getRuns } from "~/lib/queries.server";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 수집 실행 현황" }];
 }
 
-const STATUS_STYLE: Record<RunStatus, { label: string; cls: string; dot: string }> = {
+export async function loader() {
+  const runs = await getRuns();
+  const today = runs.filter((r) => true);
+  const ok = runs.filter((r) => r.status === "done").length;
+  const fail = runs.filter((r) => r.status === "error").length;
+  const rate = runs.length ? Math.round((ok / runs.length) * 1000) / 10 : 0;
+  return { runs, summary: { total: runs.length, rate, fail } };
+}
+
+const STATUS_STYLE: Record<string, { label: string; cls: string; dot: string }> = {
   done: { label: "완료", cls: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
   running: { label: "실행 중", cls: "bg-primary-container/15 text-primary", dot: "bg-primary animate-pulse" },
   error: { label: "오류", cls: "bg-error-container text-error", dot: "bg-error" },
 };
 
-const TONE: Record<string, string> = {
-  primary: "text-primary",
-  emerald: "text-emerald-600",
-  error: "text-error",
-};
-
 export default function AdminRuns() {
+  const { runs, summary } = useLoaderData<typeof loader>();
+  const cards = [
+    { label: "수집 실행", value: String(summary.total), icon: "sync", tone: "text-primary" },
+    { label: "성공률", value: `${summary.rate}%`, icon: "check_circle", tone: "text-emerald-600" },
+    { label: "확인 필요한 실패", value: String(summary.fail), icon: "error", tone: "text-error" },
+  ];
+
   return (
     <div className="p-container-padding space-y-card-gap">
-      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-card-gap">
-        {runSummary.map((s) => (
+        {cards.map((s) => (
           <Card key={s.label} className="p-container-padding flex items-center justify-between">
             <div>
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{s.label}</span>
-              <p className={`font-metric-lg text-metric-lg tabular-nums mt-2 ${TONE[s.tone]}`}>{s.value}</p>
+              <p className={`font-metric-lg text-metric-lg tabular-nums mt-2 ${s.tone}`}>{s.value}</p>
             </div>
-            <span className={`material-symbols-outlined text-[32px] ${TONE[s.tone]}`}>{s.icon}</span>
+            <span className={`material-symbols-outlined text-[32px] ${s.tone}`}>{s.icon}</span>
           </Card>
         ))}
       </div>
 
-      {/* Runs table */}
       <Card>
-        <CardHeader
-          title="오늘의 수집 실행"
-          action={<button className="text-primary font-label-caps text-label-caps hover:underline flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">refresh</span>새로고침</button>}
-        />
+        <CardHeader title="최근 수집 실행" />
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface">
-                {["브랜드", "플랫폼", "마지막 실행", "상태", "수집 건수", "소요 시간"].map((h, i) => (
+                {["브랜드", "플랫폼", "실행 시각", "상태", "수집 건수", "소요 시간"].map((h, i) => (
                   <th key={h} className={`px-container-padding py-3 font-label-caps text-label-caps text-on-surface-variant uppercase border-b border-outline-variant ${i >= 4 ? "text-right" : ""}`}>
                     {h}
                   </th>
@@ -52,7 +58,7 @@ export default function AdminRuns() {
             </thead>
             <tbody className="divide-y divide-outline-variant">
               {runs.map((r) => {
-                const s = STATUS_STYLE[r.status];
+                const s = STATUS_STYLE[r.status] ?? STATUS_STYLE.done;
                 return (
                   <tr key={r.id} className={`hover:bg-surface-dim/30 transition-colors ${r.status === "error" ? "bg-error-container/20" : ""}`}>
                     <td className="px-container-padding py-3 font-body-md text-body-md font-semibold">{r.brand}</td>

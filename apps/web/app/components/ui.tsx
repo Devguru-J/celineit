@@ -42,6 +42,41 @@ export function MediaPlaceholder({
   );
 }
 
+// 실제 이미지 + 로드 실패 시 그라데이션 플레이스홀더로 폴백.
+// (인스타 CDN 이미지는 핫링크 차단/만료될 수 있어 폴백 필요 — 추후 R2 사본으로 안정화)
+export function MediaImage({
+  src,
+  seed,
+  format,
+  className = "",
+}: {
+  src: string | null | undefined;
+  seed: string;
+  format?: "image" | "video" | "carousel" | null;
+  className?: string;
+}) {
+  if (!src) return <MediaPlaceholder seed={seed} format={format ?? undefined} className={className} />;
+  return (
+    <div className={`relative bg-surface-variant overflow-hidden ${className}`}>
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
+      {format === "video" && (
+        <span className="material-symbols-outlined absolute top-1.5 right-1.5 text-white drop-shadow text-[20px]">
+          play_circle
+        </span>
+      )}
+    </div>
+  );
+}
+
 // Card wrapper matching the Stitch surface treatment.
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
