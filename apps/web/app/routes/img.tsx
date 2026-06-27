@@ -21,19 +21,25 @@ export async function loader({ request }: { request: Request }) {
   if (target.protocol !== "https:") throw new Response("bad protocol", { status: 400 });
   if (!ALLOWED.some((rx) => rx.test(target.hostname))) throw new Response("host not allowed", { status: 403 });
 
+  // 영상 탐색(seek)을 위해 Range 헤더를 그대로 전달
+  const range = request.headers.get("range");
   const upstream = await fetch(target.toString(), {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-      Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      Accept: "image/avif,image/webp,image/apng,image/*,video/*,*/*;q=0.8",
+      ...(range ? { Range: range } : {}),
     },
   });
-  if (!upstream.ok || !upstream.body) throw new Response(`upstream ${upstream.status}`, { status: 502 });
+  if (!upstream.ok && upstream.status !== 206) throw new Response(`upstream ${upstream.status}`, { status: 502 });
+  if (!upstream.body) throw new Response("no body", { status: 502 });
 
-  return new Response(upstream.body, {
-    headers: {
-      "Content-Type": upstream.headers.get("content-type") ?? "image/jpeg",
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+  const headers = new Headers();
+  headers.set("Content-Type", upstream.headers.get("content-type") ?? "application/octet-stream");
+  headers.set("Cache-Control", "public, max-age=86400");
+  for (const h of ["content-range", "accept-ranges", "content-length"]) {
+    const v = upstream.headers.get(h);
+    if (v) headers.set(h, v);
+  }
+  return new Response(upstream.body, { status: upstream.status, headers });
 }

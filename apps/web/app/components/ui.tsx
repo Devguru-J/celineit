@@ -78,6 +78,34 @@ export function MediaImage({
   );
 }
 
+function proxy(url: string): string {
+  return url.startsWith("http") ? `/img?u=${encodeURIComponent(url)}` : url;
+}
+
+// 영상 재생 (프록시 경유, Range 지원). poster 로 커버 이미지 표시.
+export function MediaVideo({
+  src,
+  poster,
+  className = "",
+}: {
+  src: string;
+  poster?: string | null;
+  className?: string;
+}) {
+  return (
+    <div className={`relative bg-black overflow-hidden ${className}`}>
+      <video
+        src={proxy(src)}
+        poster={poster ? proxy(poster) : undefined}
+        controls
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-contain bg-black"
+      />
+    </div>
+  );
+}
+
 // Card wrapper matching the Stitch surface treatment.
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (

@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import { Card, CardHeader, LineChart, MediaImage, PlatformChip } from "~/components/ui";
+import { Card, CardHeader, LineChart, MediaImage, MediaVideo, PlatformChip } from "~/components/ui";
 import { fmt } from "~/mock/data";
 import { getItemDetail, getSimilarPosts } from "~/lib/queries.server";
 
@@ -28,21 +28,26 @@ export default function ItemDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
         {/* 미디어 갤러리 */}
         <Card className="overflow-hidden">
-          {detail.media.length > 0 ? (
-            <div className="grid grid-cols-1 gap-1">
-              {detail.media.slice(0, 4).map((m, i) => (
-                <MediaImage
-                  key={i}
-                  src={m.url}
-                  seed={detail.title ?? String(i)}
-                  format={m.kind === "video" ? "video" : "image"}
-                  className="w-full aspect-square"
-                />
-              ))}
-            </div>
-          ) : (
-            <MediaImage src={null} seed={detail.title ?? "x"} format={detail.format} className="w-full aspect-square" />
-          )}
+          {(() => {
+            const cover = detail.media.find((m) => m.kind !== "video")?.url ?? null;
+            const videos = detail.media.filter((m) => m.kind === "video");
+            const images = detail.media.filter((m) => m.kind !== "video");
+            if (detail.media.length === 0) {
+              return <MediaImage src={null} seed={detail.title ?? "x"} format={detail.format} className="w-full aspect-square" />;
+            }
+            return (
+              <div className="grid grid-cols-1 gap-1">
+                {videos.map((m, i) => (
+                  <MediaVideo key={`v${i}`} src={m.url} poster={cover} className="w-full aspect-square" />
+                ))}
+                {/* 영상이 있으면 커버는 영상 poster 로 쓰이므로 이미지 갤러리는 영상 없을 때만 */}
+                {videos.length === 0 &&
+                  images.slice(0, 4).map((m, i) => (
+                    <MediaImage key={`i${i}`} src={m.url} seed={detail.title ?? String(i)} format="image" className="w-full aspect-square" />
+                  ))}
+              </div>
+            );
+          })()}
         </Card>
 
         {/* 정보 */}
