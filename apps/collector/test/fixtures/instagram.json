@@ -1,0 +1,29 @@
+[
+  {
+    "id": "3001",
+    "shortCode": "Cabc001",
+    "type": "Sidecar",
+    "caption": "SS26 in Paris.",
+    "url": "https://www.instagram.com/p/Cabc001/",
+    "timestamp": "2026-06-27T09:00:00.000Z",
+    "displayUrl": "https://scontent.example/ig1.jpg",
+    "likesCount": 84200,
+    "commentsCount": 1240,
+    "childPosts": [{ "id": "c1" }, { "id": "c2" }],
+    "ownerFollowersCount": 1840000
+  },
+  {
+    "id": "3002",
+    "shortCode": "Cabc002",
+    "type": "Video",
+    "caption": "Behind the campaign",
+    "url": "https://www.instagram.com/p/Cabc002/",
+    "timestamp": "2026-06-26T12:00:00.000Z",
+    "displayUrl": "https://scontent.example/ig2.jpg",
+    "videoUrl": "https://scontent.example/ig2.mp4",
+    "likesCount": 76000,
+    "commentsCount": 980,
+    "videoViewCount": 890000,
+    "ownerFollowersCount": 1840000
+  }
+]

@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+import { getAdapter } from "../src/adapters";
+import metaFixture from "./fixtures/meta-ads.json";
+import igFixture from "./fixtures/instagram.json";
+import twFixture from "./fixtures/twitter.json";
+import ttFixture from "./fixtures/tiktok.json";
+
+describe("meta-ads 어댑터", () => {
+  const r = getAdapter("meta_ads").normalize(metaFixture);
+
+  it("광고 3건을 정규화한다", () => {
+    expect(r.ads).toHaveLength(3);
+    expect(r.posts).toHaveLength(0);
+  });
+
+  it("포맷을 추론한다 (image/video/carousel)", () => {
+    const byId = Object.fromEntries(r.ads.map((a) => [a.platformAdId, a]));
+    expect(byId["120210000001"].format).toBe("image");
+    expect(byId["120210000002"].format).toBe("video");
+    expect(byId["120210000003"].format).toBe("carousel");
+  });
+
+  it("landing domain 을 추출한다", () => {
+    const ad = r.ads.find((a) => a.platformAdId === "120210000001")!;
+    expect(ad.landingDomain).toBe("celine.com");
+    expect(ad.seenActive).toBe(true);
+    expect(ad.mediaUrls.length).toBeGreaterThan(0);
+  });
+});
+
+describe("instagram 어댑터", () => {
+  const r = getAdapter("instagram").normalize(igFixture);
+
+  it("포스트 2건 + 계정 팔로워를 정규화한다", () => {
+    expect(r.posts).toHaveLength(2);
+    expect(r.accountMetric?.followers).toBe(1840000);
+  });
+
+  it("Sidecar=carousel, Video=video 로 매핑한다", () => {
+    const byId = Object.fromEntries(r.posts.map((p) => [p.platformPostId, p]));
+    expect(byId["3001"].format).toBe("carousel");
+    expect(byId["3002"].format).toBe("video");
+    expect(byId["3001"].metrics.likes).toBe(84200);
+  });
+});
+
+describe("twitter 어댑터", () => {
+  const r = getAdapter("twitter").normalize(twFixture);
+
+  it("트윗 2건 + 팔로워를 정규화한다", () => {
+    expect(r.posts).toHaveLength(2);
+    expect(r.accountMetric?.followers).toBe(5200000);
+  });
+
+  it("video 미디어가 있으면 video 포맷", () => {
+    const byId = Object.fromEntries(r.posts.map((p) => [p.platformPostId, p]));
+    expect(byId["1799000000000000002"].format).toBe("video");
+    expect(byId["1799000000000000001"].metrics.shares).toBe(1500);
+  });
+});
+
+describe("tiktok 어댑터", () => {
+  const r = getAdapter("tiktok").normalize(ttFixture);
+
+  it("영상 1건 + 팔로워 + 지표를 정규화한다", () => {
+    expect(r.posts).toHaveLength(1);
+    expect(r.posts[0].format).toBe("video");
+    expect(r.posts[0].metrics.views).toBe(2400000);
+    expect(r.accountMetric?.followers).toBe(1840000);
+  });
+});
+
+describe("bereal 어댑터", () => {
+  it("데이터 소스가 없어 빈 결과를 반환한다", () => {
+    const r = getAdapter("bereal").normalize([]);
+    expect(r.ads).toHaveLength(0);
+    expect(r.posts).toHaveLength(0);
+  });
+});
+
+describe("방어적 파싱", () => {
+  it("빈 배열/누락 필드에도 깨지지 않는다", () => {
+    expect(getAdapter("meta_ads").normalize([{}, null, 1] as unknown[]).ads).toHaveLength(0);
+    expect(getAdapter("instagram").normalize([{}]).posts).toHaveLength(0);
+  });
+});

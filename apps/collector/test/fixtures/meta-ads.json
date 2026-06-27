@@ -1,0 +1,35 @@
+[
+  {
+    "ad_archive_id": "120210000001",
+    "is_active": true,
+    "snapshot": {
+      "body": "트리옹프 캔버스 — 1973년부터 이어진 타임리스.",
+      "link_url": "https://www.celine.com/ko-kr/triomphe?utm_source=meta",
+      "images": [{ "original_image_url": "https://scontent.example/ad1.jpg" }],
+      "videos": []
+    }
+  },
+  {
+    "ad_archive_id": "120210000002",
+    "is_active": true,
+    "snapshot": {
+      "body": "르 밤비노. 작은 가방, 커다란 여름.",
+      "link_url": "https://www.jacquemus.com/le-bambino",
+      "images": [],
+      "videos": [{ "video_sd_url": "https://scontent.example/ad2.mp4" }]
+    }
+  },
+  {
+    "ad_archive_id": "120210000003",
+    "is_active": true,
+    "snapshot": {
+      "body": "캐러셀 광고 예시",
+      "link_url": "https://ysl.com/icare",
+      "images": [
+        { "original_image_url": "https://scontent.example/ad3a.jpg" },
+        { "original_image_url": "https://scontent.example/ad3b.jpg" }
+      ],
+      "videos": []
+    }
+  }
+]

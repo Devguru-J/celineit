@@ -1,0 +1,27 @@
+[
+  {
+    "id": "1799000000000000001",
+    "text": "SAINT LAURENT SUMMER 26",
+    "url": "https://x.com/ysl/status/1799000000000000001",
+    "createdAt": "2026-06-25T08:00:00.000Z",
+    "likeCount": 12400,
+    "replyCount": 310,
+    "retweetCount": 1500,
+    "viewCount": 540000,
+    "media": [{ "type": "photo", "media_url_https": "https://pbs.example/tw1.jpg" }],
+    "author": { "userName": "ysl", "followers": 5200000 }
+  },
+  {
+    "id": "1799000000000000002",
+    "text": "퍼즐, 모든 각도에서.",
+    "url": "https://x.com/loewe/status/1799000000000000002",
+    "createdAt": "2026-06-23T10:00:00.000Z",
+    "likeCount": 8900,
+    "replyCount": 140,
+    "retweetCount": 600,
+    "media": [
+      { "type": "video", "media_url_https": "https://pbs.example/tw2.jpg" }
+    ],
+    "author": { "userName": "loewe", "followers": 3100000 }
+  }
+]

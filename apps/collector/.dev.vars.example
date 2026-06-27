@@ -1,0 +1,14 @@
+# 로컬 러너(npm run collect)와 wrangler dev 용 환경변수 예시.
+# 복사: cp .dev.vars.example .dev.vars   (그리고 .dev.vars 는 커밋 금지)
+
+# Supabase Postgres 연결 문자열 (Project Settings → Database → Connection string → URI)
+DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres"
+
+# Apify API 토큰 (Apify Console → Settings → Integrations → API token)
+APIFY_TOKEN="apify_api_xxxxxxxxxxxxxxxxxxxx"
+
+# (선택) actor override — 비우면 기본값 사용
+# APIFY_ACTOR_META_ADS="curious_coder~facebook-ads-library-scraper"
+# APIFY_ACTOR_INSTAGRAM="apify~instagram-scraper"
+# APIFY_ACTOR_TWITTER="apidojo~tweet-scraper"
+# APIFY_ACTOR_TIKTOK="clockworks~tiktok-scraper"

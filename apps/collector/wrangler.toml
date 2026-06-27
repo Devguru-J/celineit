@@ -1,0 +1,34 @@
+name = "celine-collector"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 매일 03:00 UTC 수집 트리거
+[triggers]
+crons = ["0 3 * * *"]
+
+# Supabase Postgres 연결 (Hyperdrive) — 생성 후 id 입력:
+#   npx wrangler hyperdrive create celine-db --connection-string="postgres://..."
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "REPLACE_WITH_HYPERDRIVE_ID"
+
+# 수집 작업 분산 큐
+[[queues.producers]]
+binding = "COLLECT_QUEUE"
+queue = "celine-collect"
+
+[[queues.consumers]]
+queue = "celine-collect"
+max_batch_size = 5
+max_retries = 3
+dead_letter_queue = "celine-collect-dlq"
+
+# 비밀값은 `wrangler secret put` 으로 주입:
+#   npx wrangler secret put APIFY_TOKEN
+[vars]
+MAX_ITEMS = "50"
+# APIFY_ACTOR_META_ADS = "curious_coder~facebook-ads-library-scraper"
+# APIFY_ACTOR_INSTAGRAM = "apify~instagram-scraper"
+# APIFY_ACTOR_TWITTER = "apidojo~tweet-scraper"
+# APIFY_ACTOR_TIKTOK = "clockworks~tiktok-scraper"
