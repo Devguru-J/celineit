@@ -7,7 +7,7 @@ import {
 } from "~/mock/data";
 
 export function meta() {
-  return [{ title: "Celine Intelligence · Summary" }];
+  return [{ title: "Celine Intelligence · 요약" }];
 }
 
 const TIMELINE_ICON: Record<string, { icon: string; bg: string; fg: string }> = {
@@ -51,8 +51,8 @@ export default function Summary() {
         {/* Recent changes timeline */}
         <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader
-            title="Recent Changes"
-            action={<button className="text-primary font-label-caps text-label-caps hover:underline">View All</button>}
+            title="최근 변경"
+            action={<button className="text-primary font-label-caps text-label-caps hover:underline">전체 보기</button>}
           />
           <div className="p-container-padding relative timeline-line">
             <div className="space-y-8">
@@ -93,8 +93,8 @@ export default function Summary() {
         <div className="lg:col-span-1 space-y-card-gap">
           <Card className="p-container-padding">
             <div className="mb-6">
-              <h3 className="font-headline-sm text-headline-sm">Total Follower Growth</h3>
-              <p className="font-label-muted text-label-muted text-on-surface-variant">Consolidated cross-platform trend</p>
+              <h3 className="font-headline-sm text-headline-sm">전체 팔로워 증가</h3>
+              <p className="font-label-muted text-label-muted text-on-surface-variant">플랫폼 통합 추세</p>
             </div>
             <div className="relative h-48 w-full flex items-end justify-between gap-1 group">
               {[60, 65, 75, 80, 85, 90, 70, 95].map((hP, i) => (
@@ -117,7 +117,7 @@ export default function Summary() {
             <div className="mt-6 pt-6 border-t border-outline-variant">
               <div className="p-3 bg-surface rounded-lg flex items-center justify-between">
                 <div>
-                  <p className="font-label-muted text-label-muted">Aggregated Delta</p>
+                  <p className="font-label-muted text-label-muted">통합 증감률</p>
                   <p className="font-metric-md text-metric-md text-emerald-600 font-bold">+18.4%</p>
                 </div>
                 <span className="material-symbols-outlined text-emerald-600 text-[32px]">show_chart</span>
@@ -128,14 +128,14 @@ export default function Summary() {
           <div className="bg-primary p-container-padding rounded text-on-primary shadow-lg shadow-primary/20">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-              <span className="font-label-caps text-label-caps uppercase opacity-80">AI Insight</span>
+              <span className="font-label-caps text-label-caps uppercase opacity-80">AI 인사이트</span>
             </div>
             <p className="font-body-md text-body-md leading-relaxed">
-              "Competitors are shifting 15% more budget into short-form video formats this week. Consider prioritizing
-              TikTok creative assets."
+              "경쟁사들이 이번 주 숏폼 동영상 포맷에 예산을 15% 더 집중하고 있습니다. 틱톡 크리에이티브 제작을 우선
+              검토해 보세요."
             </p>
             <button className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 transition-colors rounded font-body-sm text-body-sm font-semibold border border-white/20">
-              Apply Strategy
+              전략 적용
             </button>
           </div>
         </div>
@@ -143,12 +143,12 @@ export default function Summary() {
 
       {/* Brand health table */}
       <Card>
-        <CardHeader title="Monitored Brand Health" />
+        <CardHeader title="모니터링 브랜드 현황" />
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface">
-                {["Brand", "Sentiment", "Ad Spend Index", "Status"].map((h, i) => (
+                {["브랜드", "감성", "광고 집행 지수", "상태"].map((h, i) => (
                   <th
                     key={h}
                     className={`px-container-padding py-3 font-label-caps text-label-caps text-on-surface-variant uppercase border-b border-outline-variant ${
@@ -179,7 +179,7 @@ export default function Summary() {
                   </td>
                   <td className="px-container-padding py-4 text-right tabular-nums font-body-md">{b.spend}</td>
                   <td className="px-container-padding py-4 text-center">
-                    <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-label-caps text-[10px]">Active Tracking</span>
+                    <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-label-caps text-[10px]">추적 중</span>
                   </td>
                 </tr>
               ))}

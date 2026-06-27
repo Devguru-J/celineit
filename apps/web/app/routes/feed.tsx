@@ -3,7 +3,7 @@ import { Card, MediaPlaceholder, PlatformChip } from "~/components/ui";
 import { ads, fmt, PLATFORM_META, posts, type Platform } from "~/mock/data";
 
 export function meta() {
-  return [{ title: "Celine Intelligence · Unified Feed" }];
+  return [{ title: "Celine Intelligence · 통합 피드" }];
 }
 
 type FeedItem = {
@@ -56,7 +56,7 @@ export default function Feed() {
               platform === p ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
             }`}
           >
-            {p === "all" ? "All Platforms" : PLATFORM_META[p].label}
+            {p === "all" ? "전체 플랫폼" : PLATFORM_META[p].label}
           </button>
         ))}
         <div className="h-5 w-[1px] bg-outline-variant mx-2" />
@@ -64,15 +64,15 @@ export default function Feed() {
           <button
             key={k}
             onClick={() => setKind(k)}
-            className={`px-3 py-1.5 rounded-full font-body-sm text-body-sm capitalize transition-colors ${
+            className={`px-3 py-1.5 rounded-full font-body-sm text-body-sm transition-colors ${
               kind === k ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
             }`}
           >
-            {k === "all" ? "All Types" : k === "ad" ? "Ads" : "Posts"}
+            {k === "all" ? "전체 유형" : k === "ad" ? "광고" : "게시물"}
           </button>
         ))}
         <span className="ml-auto font-label-muted text-label-muted text-on-surface-variant pr-2">
-          {items.length} items
+          {items.length}개
         </span>
       </Card>
 
@@ -88,11 +88,11 @@ export default function Feed() {
                   <span className="font-label-muted text-label-muted text-on-surface-variant">{i.brand}</span>
                 </div>
                 <span
-                  className={`px-1.5 py-0.5 rounded font-label-muted text-[10px] uppercase font-bold ${
+                  className={`px-1.5 py-0.5 rounded font-label-muted text-[10px] font-bold ${
                     i.kind === "ad" ? "bg-primary-container/15 text-primary" : "bg-surface-variant text-on-surface-variant"
                   }`}
                 >
-                  {i.kind}
+                  {i.kind === "ad" ? "광고" : "게시물"}
                 </span>
               </div>
               <p className="font-body-sm text-body-sm line-clamp-2 flex-1">{i.text}</p>
@@ -101,7 +101,7 @@ export default function Feed() {
                 {i.kind === "ad" ? (
                   <span className="flex items-center gap-1 font-label-muted text-label-muted text-primary">
                     <span className="material-symbols-outlined text-[14px]">schedule</span>
-                    {i.daysActive}d active
+                    {i.daysActive}일째
                   </span>
                 ) : (
                   <div className="flex items-center gap-3 font-label-muted text-label-muted text-on-surface-variant tabular-nums">

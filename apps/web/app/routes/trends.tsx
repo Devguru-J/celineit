@@ -3,7 +3,7 @@ import { Card, CardHeader, LineChart, MediaPlaceholder, PlatformChip } from "~/c
 import { engagementSeries, fmt, followerSeries, topPosts, trendAccount } from "~/mock/data";
 
 export function meta() {
-  return [{ title: "Celine Intelligence · Trends" }];
+  return [{ title: "Celine Intelligence · 트렌드" }];
 }
 
 const RANGES = ["7d", "30d", "90d"] as const;
@@ -28,12 +28,12 @@ export default function Trends() {
         </div>
         <div className="flex gap-8 ml-auto">
           <div>
-            <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">Followers</p>
+            <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">팔로워</p>
             <p className="font-metric-lg text-metric-lg tabular-nums">{fmt(trendAccount.followers)}</p>
             <span className="font-label-muted text-label-muted text-emerald-600">{trendAccount.followersDelta}</span>
           </div>
           <div>
-            <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">30d Avg Engagement</p>
+            <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">30일 평균 인게이지먼트</p>
             <p className="font-metric-lg text-metric-lg tabular-nums">{trendAccount.engagementRate}%</p>
             <span className="font-label-muted text-label-muted text-emerald-600">{trendAccount.engagementDelta}</span>
           </div>
@@ -58,20 +58,20 @@ export default function Trends() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
         <Card className="p-container-padding">
-          <h3 className="font-headline-sm text-headline-sm mb-1">Daily Followers</h3>
-          <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">Net follower count per day</p>
+          <h3 className="font-headline-sm text-headline-sm mb-1">일별 팔로워</h3>
+          <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">하루 단위 순 팔로워 수</p>
           <LineChart data={followers} stroke="#3525cd" />
         </Card>
         <Card className="p-container-padding">
-          <h3 className="font-headline-sm text-headline-sm mb-1">Engagement Rate</h3>
-          <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">Daily engagement rate (%)</p>
+          <h3 className="font-headline-sm text-headline-sm mb-1">인게이지먼트율</h3>
+          <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">일별 인게이지먼트율 (%)</p>
           <LineChart data={engagement} stroke="#565e74" />
         </Card>
       </div>
 
       {/* Top posts */}
       <Card>
-        <CardHeader title="Best Performing Posts" />
+        <CardHeader title="성과 상위 게시물" />
         <div className="divide-y divide-outline-variant">
           {topPosts.map((p) => (
             <div key={p.id} className="flex items-center gap-4 px-container-padding py-3 hover:bg-surface-dim/30 transition-colors">

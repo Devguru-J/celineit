@@ -2,7 +2,7 @@ import { Card, CardHeader, MediaPlaceholder, PlatformChip } from "~/components/u
 import { ads } from "~/mock/data";
 
 export function meta() {
-  return [{ title: "Celine Intelligence · Winning Ads" }];
+  return [{ title: "Celine Intelligence · 위닝 광고" }];
 }
 
 export default function WinningAds() {
@@ -14,16 +14,16 @@ export default function WinningAds() {
       <div className="p-container-padding rounded flex items-start gap-3 bg-primary text-on-primary shadow-lg shadow-primary/20">
         <span className="material-symbols-outlined">emoji_events</span>
         <div>
-          <h3 className="font-headline-sm text-headline-sm">Longevity = performance signal</h3>
+          <h3 className="font-headline-sm text-headline-sm">지속 기간 = 성과 신호</h3>
           <p className="font-body-sm text-body-sm opacity-90 mt-1">
-            Ads ranked by how many days they have stayed continuously active. Long-runners are the creatives
-            competitors keep paying for — the strongest proxy for what's working.
+            광고가 연속으로 활성 상태를 유지한 일수 기준으로 정렬했습니다. 오래 살아남은 광고일수록 경쟁사가 계속
+            비용을 쓰는 크리에이티브, 즉 '먹히는' 광고일 가능성이 가장 높습니다.
           </p>
         </div>
       </div>
 
       <Card>
-        <CardHeader title="Ranked by Days Active" action={<span className="font-label-muted text-label-muted text-on-surface-variant">{ranked.length} ads</span>} />
+        <CardHeader title="지속 일수 순위" action={<span className="font-label-muted text-label-muted text-on-surface-variant">광고 {ranked.length}개</span>} />
         <div className="divide-y divide-outline-variant">
           {ranked.map((a, idx) => (
             <div key={a.id} className="flex items-center gap-4 px-container-padding py-4 hover:bg-surface-dim/30 transition-colors">
@@ -47,9 +47,9 @@ export default function WinningAds() {
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="font-metric-md text-metric-md tabular-nums text-primary">{a.daysActive}<span className="text-body-sm text-on-surface-variant font-normal">d</span></div>
+                <div className="font-metric-md text-metric-md tabular-nums text-primary">{a.daysActive}<span className="text-body-sm text-on-surface-variant font-normal">일</span></div>
                 <span className={`inline-block mt-1 px-2 py-0.5 rounded font-label-caps text-[10px] ${a.isActive ? "bg-emerald-50 text-emerald-700" : "bg-surface-variant text-on-surface-variant"}`}>
-                  {a.isActive ? "Active" : "Ended"}
+                  {a.isActive ? "활성" : "종료"}
                 </span>
               </div>
             </div>

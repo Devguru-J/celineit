@@ -2,13 +2,13 @@ import { Card, CardHeader, PlatformChip } from "~/components/ui";
 import { runs, runSummary, type RunStatus } from "~/mock/data";
 
 export function meta() {
-  return [{ title: "Celine Intelligence · Collection Runs" }];
+  return [{ title: "Celine Intelligence · 수집 실행 현황" }];
 }
 
 const STATUS_STYLE: Record<RunStatus, { label: string; cls: string; dot: string }> = {
-  done: { label: "Done", cls: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  running: { label: "Running", cls: "bg-primary-container/15 text-primary", dot: "bg-primary animate-pulse" },
-  error: { label: "Error", cls: "bg-error-container text-error", dot: "bg-error" },
+  done: { label: "완료", cls: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
+  running: { label: "실행 중", cls: "bg-primary-container/15 text-primary", dot: "bg-primary animate-pulse" },
+  error: { label: "오류", cls: "bg-error-container text-error", dot: "bg-error" },
 };
 
 const TONE: Record<string, string> = {
@@ -36,14 +36,14 @@ export default function AdminRuns() {
       {/* Runs table */}
       <Card>
         <CardHeader
-          title="Today's Collection Runs"
-          action={<button className="text-primary font-label-caps text-label-caps hover:underline flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">refresh</span>Refresh</button>}
+          title="오늘의 수집 실행"
+          action={<button className="text-primary font-label-caps text-label-caps hover:underline flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">refresh</span>새로고침</button>}
         />
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface">
-                {["Brand", "Platform", "Last Run", "Status", "Items", "Duration"].map((h, i) => (
+                {["브랜드", "플랫폼", "마지막 실행", "상태", "수집 건수", "소요 시간"].map((h, i) => (
                   <th key={h} className={`px-container-padding py-3 font-label-caps text-label-caps text-on-surface-variant uppercase border-b border-outline-variant ${i >= 4 ? "text-right" : ""}`}>
                     {h}
                   </th>

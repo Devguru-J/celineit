@@ -3,8 +3,11 @@
 @tailwind utilities;
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
   -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
 }
 
 .material-symbols-outlined {

@@ -3,13 +3,13 @@ import { NavLink } from "react-router";
 type NavItem = { to: string; icon: string; label: string; end?: boolean };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", icon: "dashboard", label: "Summary", end: true },
-  { to: "/feed", icon: "rss_feed", label: "Feed" },
-  { to: "/winning-ads", icon: "star", label: "Winning Ads" },
-  { to: "/trends", icon: "trending_up", label: "Trends" },
-  { to: "/calendar", icon: "calendar_month", label: "Calendar" },
-  { to: "/brands", icon: "domain", label: "Brands" },
-  { to: "/admin/runs", icon: "settings_applications", label: "Admin/Runs" },
+  { to: "/", icon: "dashboard", label: "요약", end: true },
+  { to: "/feed", icon: "rss_feed", label: "피드" },
+  { to: "/winning-ads", icon: "star", label: "위닝 광고" },
+  { to: "/trends", icon: "trending_up", label: "트렌드" },
+  { to: "/calendar", icon: "calendar_month", label: "캘린더" },
+  { to: "/brands", icon: "domain", label: "브랜드" },
+  { to: "/admin/runs", icon: "settings_applications", label: "수집 관리" },
 ];
 
 export function Sidebar() {
@@ -58,7 +58,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="font-body-md text-body-md font-semibold truncate">Celine Intelligence</p>
-            <p className="font-label-muted text-label-muted text-on-surface-variant truncate">Internal Tool</p>
+            <p className="font-label-muted text-label-muted text-on-surface-variant truncate">내부 전용 툴</p>
           </div>
           <span className="material-symbols-outlined text-[20px] text-on-surface-variant">logout</span>
         </div>
