@@ -1,5 +1,4 @@
 import type { Platform } from "@celine/shared";
-import { berealAdapter } from "./bereal";
 import { instagramAdapter } from "./instagram";
 import { metaAdsAdapter } from "./meta-ads";
 import { tiktokAdapter } from "./tiktok";
@@ -11,7 +10,6 @@ export const ADAPTERS: Record<Platform, PlatformAdapter> = {
   instagram: instagramAdapter,
   twitter: twitterAdapter,
   tiktok: tiktokAdapter,
-  bereal: berealAdapter,
 };
 
 export function getAdapter(platform: Platform): PlatformAdapter {

@@ -2,7 +2,7 @@
 // 구조는 계획된 Drizzle 스키마(brands / accounts / ads / posts / metrics / runs)를 따르므로
 // 추후 실제 loader 연결 시 최소 변경으로 교체 가능.
 
-export type Platform = "meta_ads" | "instagram" | "twitter" | "tiktok" | "bereal";
+export type Platform = "meta_ads" | "instagram" | "twitter" | "tiktok";
 
 export const PLATFORM_META: Record<
   Platform,
@@ -12,7 +12,6 @@ export const PLATFORM_META: Record<
   instagram: { label: "인스타그램", short: "IG", icon: "photo_camera", dot: "bg-[#E1306C]" },
   twitter: { label: "트위터 / X", short: "X", icon: "tag", dot: "bg-[#111111]" },
   tiktok: { label: "틱톡", short: "TikTok", icon: "music_note", dot: "bg-[#00BFA5]" },
-  bereal: { label: "BeReal", short: "BeReal", icon: "photo", dot: "bg-[#000000]" },
 };
 
 export const brands = [

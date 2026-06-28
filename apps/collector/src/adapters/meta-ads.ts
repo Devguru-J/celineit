@@ -1,4 +1,4 @@
-import { type NormalizedAd, type NormalizedResult, emptyResult, landingDomainOf } from "@celine/shared";
+import { type NormalizedAd, type NormalizedResult, TARGET_COUNTRY, emptyResult, landingDomainOf } from "@celine/shared";
 import { pick, str, type AccountInput, type PlatformAdapter } from "./types";
 
 // Meta Ad Library 스크래퍼 (apify/facebook-ads-scraper).
@@ -9,7 +9,7 @@ export const metaAdsAdapter: PlatformAdapter = {
 
   buildInput(account: AccountInput, opts) {
     const extra = (account.apifyInput ?? {}) as Record<string, unknown>;
-    const country = (extra.country as string) ?? "JP";
+    const country = (extra.country as string) ?? TARGET_COUNTRY;
     const searchUrl =
       account.profileUrl ??
       `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}` +

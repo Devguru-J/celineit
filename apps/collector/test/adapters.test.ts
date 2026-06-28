@@ -70,14 +70,6 @@ describe("tiktok 어댑터", () => {
   });
 });
 
-describe("bereal 어댑터", () => {
-  it("데이터 소스가 없어 빈 결과를 반환한다", () => {
-    const r = getAdapter("bereal").normalize([]);
-    expect(r.ads).toHaveLength(0);
-    expect(r.posts).toHaveLength(0);
-  });
-});
-
 describe("방어적 파싱", () => {
   it("빈 배열/누락 필드에도 깨지지 않는다", () => {
     expect(getAdapter("meta_ads").normalize([{}, null, 1] as unknown[]).ads).toHaveLength(0);
