@@ -19,7 +19,13 @@ const SEED_BRANDS: SeedBrand[] = [
       { platform: "instagram", handle: "@shiseido" },
       { platform: "twitter", handle: "@shiseido_corp" },
       { platform: "tiktok", handle: "@shiseido" },
-      { platform: "meta_ads", handle: "Shiseido" },
+      {
+        platform: "meta_ads",
+        handle: "Shiseido",
+        // Shiseido Group 資生堂 공식 페이지 ID (Meta Ad Library)
+        profileUrl:
+          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=548424035180811&media_type=all",
+      },
     ],
   },
   {

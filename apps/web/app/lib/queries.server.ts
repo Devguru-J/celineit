@@ -397,6 +397,7 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
       lastSeen: adsT.lastSeen,
       daysActive: adsT.daysActive,
       isActive: adsT.isActive,
+      raw: adsT.raw,
     })
     .from(adsT)
     .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
@@ -422,7 +423,43 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
       lastSeen: a.lastSeen,
       daysActive: a.daysActive,
       isActive: a.isActive,
+      ...extractAdMeta(a.raw),
     },
+  };
+}
+
+// Meta Ad Library raw 에서 유효·유용한 지표 추출.
+// (노출·지출·CTR 은 상업광고라 Meta 가 비공개 → null. 아래는 실제로 채워지는 필드만.)
+function epochToDate(v: unknown): string | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) return null;
+  const ms = v > 1e12 ? v : v * 1000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function extractAdMeta(raw: unknown) {
+  const o = (raw ?? {}) as Record<string, any>;
+  const s = (o.snapshot ?? {}) as Record<string, any>;
+  const cards = Array.isArray(s.cards) ? s.cards.length : 0;
+  const images = Array.isArray(s.images) ? s.images.length : 0;
+  const videos = Array.isArray(s.videos) ? s.videos.length : 0;
+  return {
+    // 노출 지면 (어떤 플랫폼에 게재 중인지) — Facebook / Instagram / Audience Network / Messenger
+    platforms: (Array.isArray(o.publisherPlatform) ? o.publisherPlatform : []) as string[],
+    // 원본 광고 포맷: DCO(동적 크리에이티브) / CAROUSEL / VIDEO / IMAGE
+    displayFormat: typeof s.displayFormat === "string" ? s.displayFormat : null,
+    // 행동유도 버튼
+    cta: typeof s.ctaText === "string" && s.ctaText ? s.ctaText : null,
+    // 광고주 페이지 카테고리
+    pageCategories: (Array.isArray(s.pageCategories) ? s.pageCategories : []) as string[],
+    // 광고주 페이지 좋아요(팔로워) 수 — 0 이거나 비공개면 null
+    pageLikeCount: typeof s.pageLikeCount === "number" && s.pageLikeCount > 0 ? s.pageLikeCount : null,
+    // 묶음(변형) 광고 수 — 같은 크리에이티브 그룹으로 동시 게재 중인 변형 개수
+    variantCount: typeof o.collationCount === "number" && o.collationCount > 1 ? o.collationCount : null,
+    // 이 광고의 크리에이티브(카드/이미지/영상) 개수
+    creativeCount: cards + images + videos || null,
+    // 게재 예정 기간(스케줄) — firstSeen/lastSeen(우리가 관측한 기간)과 별개
+    scheduledStart: epochToDate(o.startDate),
+    scheduledEnd: epochToDate(o.endDate),
   };
 }
 

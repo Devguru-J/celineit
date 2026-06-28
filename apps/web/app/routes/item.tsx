@@ -93,8 +93,42 @@ export default function ItemDetail() {
                 <Row k="상태" v={detail.ad.isActive ? "활성" : "종료"} />
                 <Row k="최초 관측" v={detail.ad.firstSeen} />
                 <Row k="최근 관측" v={detail.ad.lastSeen} />
+                {detail.ad.scheduledStart && <Row k="게재 시작" v={detail.ad.scheduledStart} />}
+                {detail.ad.scheduledEnd && <Row k="게재 종료" v={detail.ad.scheduledEnd} />}
                 {detail.ad.landingDomain && <Row k="랜딩 도메인" v={detail.ad.landingDomain} />}
               </div>
+            </Card>
+          )}
+
+          {/* 광고 인텔리전스 (Ad Library raw 기반 유효 지표) */}
+          {detail.ad && (
+            <Card className="p-container-padding">
+              <h3 className="font-headline-sm text-headline-sm mb-3">광고 인텔리전스</h3>
+              {detail.ad.platforms.length > 0 && (
+                <div className="mb-3">
+                  <span className="font-label-muted text-label-muted text-on-surface-variant">노출 지면</span>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {detail.ad.platforms.map((p) => (
+                      <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-variant font-label-muted text-[11px] font-medium">
+                        <span className="material-symbols-outlined text-[14px]">{platformIcon(p)}</span>
+                        {platformLabel(p)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3 font-body-sm text-body-sm">
+                {detail.ad.displayFormat && <Row k="광고 포맷" v={formatLabel(detail.ad.displayFormat)} />}
+                {detail.ad.cta && <Row k="행동유도(CTA)" v={detail.ad.cta} />}
+                {detail.ad.variantCount && <Row k="변형 수" v={`${detail.ad.variantCount}개`} />}
+                {detail.ad.creativeCount && <Row k="크리에이티브" v={`${detail.ad.creativeCount}개`} />}
+                {detail.ad.pageLikeCount && <Row k="페이지 좋아요" v={fmt(detail.ad.pageLikeCount)} />}
+                {detail.ad.pageCategories.length > 0 && <Row k="카테고리" v={detail.ad.pageCategories.join(", ")} />}
+              </div>
+              <p className="mt-3 pt-3 border-t border-outline-variant font-label-muted text-[11px] text-on-surface-variant leading-relaxed">
+                <span className="material-symbols-outlined text-[13px] align-middle mr-0.5">info</span>
+                노출수·지출·CTR 은 Meta 가 상업광고에 대해 비공개합니다. 광고 <b>지속일수</b>가 성과 대리지표이며, 오래·여러 변형으로 게재될수록 효과가 좋다는 신호입니다.
+              </p>
             </Card>
           )}
         </div>
@@ -151,4 +185,37 @@ function Row({ k, v }: { k: string; v: string | null }) {
       <span className="font-medium tabular-nums">{v ?? "—"}</span>
     </div>
   );
+}
+
+function platformLabel(p: string): string {
+  const m: Record<string, string> = {
+    FACEBOOK: "Facebook",
+    INSTAGRAM: "Instagram",
+    MESSENGER: "Messenger",
+    AUDIENCE_NETWORK: "Audience Network",
+    THREADS: "Threads",
+  };
+  return m[p.toUpperCase()] ?? p;
+}
+
+function platformIcon(p: string): string {
+  const m: Record<string, string> = {
+    FACEBOOK: "groups",
+    INSTAGRAM: "photo_camera",
+    MESSENGER: "chat",
+    AUDIENCE_NETWORK: "ad_units",
+    THREADS: "tag",
+  };
+  return m[p.toUpperCase()] ?? "campaign";
+}
+
+function formatLabel(f: string): string {
+  const m: Record<string, string> = {
+    DCO: "동적 크리에이티브(DCO)",
+    DPA: "다이내믹 상품광고",
+    CAROUSEL: "캐러셀",
+    VIDEO: "동영상",
+    IMAGE: "이미지",
+  };
+  return m[f.toUpperCase()] ?? f;
 }
