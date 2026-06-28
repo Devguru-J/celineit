@@ -17,7 +17,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "shiseido",
     accounts: [
       { platform: "instagram", handle: "@shiseido" },
-      { platform: "twitter", handle: "@shiseido_corp" },
+      { platform: "twitter", handle: "@SHISEIDO_brand" },
       { platform: "tiktok", handle: "@shiseido" },
       {
         platform: "meta_ads",
@@ -33,7 +33,8 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "sk-ii",
     accounts: [
       { platform: "instagram", handle: "@skii" },
-      { platform: "tiktok", handle: "@skii" },
+      { platform: "twitter", handle: "@SKII_Japan" },
+      { platform: "tiktok", handle: "@skii_official_jp" },
       {
         platform: "meta_ads",
         handle: "SK-II",
@@ -46,8 +47,9 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "KATE TOKYO",
     slug: "kate-tokyo",
     accounts: [
-      { platform: "instagram", handle: "@kate.tokyo.official" },
-      { platform: "tiktok", handle: "@kate.tokyo.official" },
+      { platform: "instagram", handle: "@kate.tokyo.official_jp" },
+      { platform: "twitter", handle: "@KATETOKYO_PR" },
+      { platform: "tiktok", handle: "@kate.tokyo" },
     ],
   },
   {
@@ -55,7 +57,8 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "canmake",
     accounts: [
       { platform: "instagram", handle: "@canmaketokyo" },
-      { platform: "tiktok", handle: "@canmaketokyo" },
+      { platform: "twitter", handle: "@CanmakeTokyo" },
+      { platform: "tiktok", handle: "@canmaketokyo_official" },
       {
         platform: "meta_ads",
         handle: "CANMAKE",
@@ -67,7 +70,10 @@ const SEED_BRANDS: SeedBrand[] = [
   {
     name: "CEZANNE",
     slug: "cezanne",
-    accounts: [{ platform: "instagram", handle: "@cezanne_official" }],
+    accounts: [
+      { platform: "instagram", handle: "@cezannecosmetics" },
+      { platform: "twitter", handle: "@cezannecosme" },
+    ],
   },
 ];
 // ──────────────────────────────────────────────────────
