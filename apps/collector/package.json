@@ -14,10 +14,12 @@
   "dependencies": {
     "@celine/db": "*",
     "@celine/shared": "*",
+    "kuromoji": "^0.1.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
+    "@types/kuromoji": "^0.1.3",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
