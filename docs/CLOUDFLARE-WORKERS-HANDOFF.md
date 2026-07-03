@@ -149,6 +149,33 @@ Responsive QA performed:
 - Desktop sidebar/search remained visible at `1280x800`.
 - Browser console had no relevant `error` or `warn` entries during QA.
 
+## Summary Insight Panel Balance
+
+The Summary page originally had a `lg:grid-cols-3` section where the left `최근 변경` card spanned two columns and the right column contained only a short blue `AI 인사이트 (예시)` card. On desktop this left a large empty area beneath the blue card, making the section look visually unbalanced.
+
+Current layout in `apps/web/app/routes/summary.tsx`:
+
+- The left side remains `Card className="lg:col-span-2 overflow-hidden"` for recent changes.
+- The right side is now a stacked insight panel instead of a single `h-fit` card.
+- The right panel contains:
+  - `AI 인사이트 (예시)`
+  - `최근 수집 요약`, reusing the later KPI values via `kpis.slice(2, 4)`
+  - `다음 확인 포인트`
+
+This keeps the original AI insight copy, but gives the right column enough informational weight to balance against the longer timeline card.
+
+QA performed for this adjustment:
+
+- Desktop viewport: `1280x800`
+  - Confirmed the right side is no longer a lone short card floating above a large blank area.
+  - Confirmed `최근 수집 요약` and `다음 확인 포인트` render in the right column.
+- Mobile viewport: `390x844`
+  - Confirmed the panel stacks below `최근 변경`.
+  - Confirmed no horizontal overflow: `document.documentElement.scrollWidth` remained within viewport width.
+- `npm run typecheck -w @celine/web` passed.
+- `npm run build -w @celine/web` passed.
+- Browser console had no relevant `error` or `warn` entries during QA.
+
 ## Relevant Commits
 
 - `2bc0474 Configure web Hyperdrive binding`

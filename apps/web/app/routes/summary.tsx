@@ -64,16 +64,58 @@ export default function Summary() {
           </div>
         </Card>
 
-        {/* AI 인사이트 (예시) */}
-          <div className="h-fit rounded bg-primary p-4 text-on-primary shadow-lg shadow-primary/20 sm:p-container-padding">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-            <span className="font-label-caps text-label-caps uppercase opacity-80">AI 인사이트 (예시)</span>
+        {/* 인사이트 패널 */}
+        <div className="grid gap-card-gap lg:auto-rows-min">
+          <div className="rounded bg-primary p-4 text-on-primary shadow-lg shadow-primary/20 sm:p-container-padding">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+              <span className="font-label-caps text-label-caps uppercase opacity-80">AI 인사이트 (예시)</span>
+            </div>
+            <p className="font-body-md text-body-md leading-relaxed">
+              "콘텐츠 자동 분류·유사 광고 클러스터링은 2차 단계에서 추가됩니다. 현재는 실수집 데이터(게시물·지표·미디어)를
+              보여줍니다."
+            </p>
           </div>
-          <p className="font-body-md text-body-md leading-relaxed">
-            "콘텐츠 자동 분류·유사 광고 클러스터링은 2차 단계에서 추가됩니다. 현재는 실수집 데이터(게시물·지표·미디어)를
-            보여줍니다."
-          </p>
+
+          <Card className="p-4 sm:p-container-padding">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">오늘의 흐름</span>
+                <h3 className="mt-1 font-headline-sm text-headline-sm">최근 수집 요약</h3>
+              </div>
+              <span className="material-symbols-outlined text-primary text-[22px]">monitoring</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {kpis.slice(2, 4).map((k) => (
+                <div key={k.label} className="rounded bg-surface-container-low p-3">
+                  <p className="font-label-muted text-label-muted text-on-surface-variant">{k.label}</p>
+                  <p className="mt-2 font-metric-md text-metric-md tabular-nums">{k.value}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-container-padding">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[20px]">checklist</span>
+              <h3 className="font-headline-sm text-headline-sm">다음 확인 포인트</h3>
+            </div>
+            <div className="space-y-3">
+              {[
+                ["신규 게시물", "최근 변경에서 카피·소재 방향 확인"],
+                ["활성 광고", "장기 집행 광고를 위닝 광고에서 추적"],
+                ["브랜드 현황", "수집 대기 브랜드 상태 점검"],
+              ].map(([title, desc]) => (
+                <div key={title} className="flex gap-3">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  <div>
+                    <p className="font-body-sm text-body-sm font-semibold">{title}</p>
+                    <p className="font-label-muted text-label-muted text-on-surface-variant">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
 
