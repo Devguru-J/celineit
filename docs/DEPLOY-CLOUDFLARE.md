@@ -18,11 +18,11 @@ npx wrangler login        # 브라우저로 CF 계정 인증
 ## 1. Hyperdrive 생성 (1회) — DB 커넥션 풀
 
 Supabase 대시보드 → Project Settings → Database → Connection string →
-**Transaction pooler (port 6543)** URI 를 복사한다. (비밀번호 특수문자는 URL 인코딩)
+**Direct connection (port 5432)** URI 를 복사한다. (비밀번호 특수문자는 URL 인코딩)
 
 ```bash
 npx wrangler hyperdrive create celine-db \
-  --connection-string="postgresql://postgres.hwndnkallorbypiedowm:<PASSWORD>@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres"
+  --connection-string="postgresql://postgres:<PASSWORD>@db.hwndnkallorbypiedowm.supabase.co:5432/postgres"
 ```
 
 출력된 `id` 를 `apps/web/wrangler.jsonc` 의 `hyperdrive[0].id` 에 기입한다:
@@ -88,7 +88,7 @@ npm run dev -w @celine/web
 ## 함정 체크리스트
 
 - [ ] `compatibility_flags: ["nodejs_compat"]` — postgres.js(Node 소켓) 때문에 필수
-- [ ] Supabase 는 **Transaction 풀러(6543)** 사용 (Hyperdrive 가 앞단 풀링)
+- [ ] Supabase 는 **Direct connection(5432)** 사용 (Hyperdrive 가 앞단 풀링)
 - [ ] 모노레포: Root directory 는 `/`, 빌드는 `-w @celine/web`
 - [ ] `db.server.ts` 에서 `dotenv`/`process.env` 제거됨 (Workers 엔 없음)
 - [ ] 배포 후 `/img` 프록시(이미지/영상 Range)와 게시물 상세를 실제로 열어 확인
