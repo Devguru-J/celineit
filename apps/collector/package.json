@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "collect": "tsx src/runner.ts",
+    "collect:comments": "tsx src/collect-comments.ts",
     "seed": "tsx src/seed.ts",
     "backfill": "tsx src/backfill-media.ts",
     "test": "vitest run",
