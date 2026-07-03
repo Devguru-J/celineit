@@ -82,3 +82,24 @@ export function landingDomainOf(url: string | null | undefined): string | null {
     return null;
   }
 }
+
+// 댓글에서 주시할 집중 키워드 — 단일 설정 지점. 부분일치(substring)로 카운트.
+export const FOCUS_KEYWORDS: string[] = [
+  "韓国コスメ",
+  "スキンケア",
+  "うるおい",
+  "水分ケア",
+  "毛穴",
+  "化粧水",
+  "化粧ノリ",
+];
+
+// 어댑터가 Apify 댓글 raw 를 정규화한 결과.
+export interface NormalizedComment {
+  platformCommentId: string;
+  text: string | null;
+  likeCount?: number;
+  authorHandle?: string | null;
+  postedAt?: string | null; // ISO
+  raw: unknown;
+}
