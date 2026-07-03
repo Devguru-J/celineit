@@ -54,7 +54,7 @@ Cloudflare 대시보드 → **Workers & Pages → Create → Workers → Import 
 | Repository | `Devguru-J/celineit` |
 | Production branch | `main` |
 | Build command | `npm install && npm run build -w @celine/web` |
-| Deploy command | `npx wrangler deploy` |
+| Deploy command | `npx wrangler deploy --config apps/web/build/server/wrangler.json` |
 | Root directory | `/` (비움 — npm workspaces 가 루트에서 `@celine/db` 를 해석) |
 
 `wrangler.jsonc` 의 `HYPERDRIVE` 바인딩은 자동 인식된다(대시보드에서 따로 추가 불필요).

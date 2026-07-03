@@ -6,7 +6,7 @@
     "dev": "set -a; [ -f .dev.vars ] && . ./.dev.vars; set +a; react-router dev",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy --config build/server/wrangler.json",
     "preview": "npm run build && wrangler dev",
     "cf-typegen": "wrangler types",
     "typecheck": "react-router typegen && tsc"
