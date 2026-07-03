@@ -176,6 +176,40 @@ QA performed for this adjustment:
 - `npm run build -w @celine/web` passed.
 - Browser console had no relevant `error` or `warn` entries during QA.
 
+## Mobile Chrome Translation / Material Symbols
+
+Mobile Chrome showed broken oversized text such as `EVENT+` and `TRENDING AREA` where Material Symbols icons should have appeared. The root cause was Chrome/Google Translate treating Material Symbols ligature text such as `event`, `trending_up`, and `dashboard` as translatable page text. The app also previously declared `<html lang="en">`, which made Chrome more likely to offer or apply page translation on a Korean dashboard.
+
+Current fix:
+
+- `apps/web/app/root.tsx`
+  - `<html lang="ko" translate="no" className="light">`
+  - `<body className="notranslate bg-background text-on-surface">`
+- `apps/web/app/app.css`
+  - `.material-symbols-outlined` explicitly sets `font-family: "Material Symbols Outlined"`.
+  - The icon class also fixes ligature rendering details: `font-feature-settings: "liga"`, `line-height: 1`, `letter-spacing: normal`, `text-transform: none`, `white-space: nowrap`, and `direction: ltr`.
+- Every JSX usage of `material-symbols-outlined` now also includes `notranslate`.
+
+Do not remove `notranslate` from icon spans unless replacing Material Symbols with real SVG/icon components. Material Symbols are text ligatures; if translation touches them, they can render as visible words instead of icons.
+
+QA performed for this adjustment:
+
+- Mobile viewport: `390x844`
+- Checked `/` and `/feed`.
+- Verified:
+  - `document.documentElement.lang === "ko"`
+  - `document.documentElement.getAttribute("translate") === "no"`
+  - `document.body.classList.contains("notranslate") === true`
+  - All rendered `.material-symbols-outlined` nodes had the `notranslate` class.
+  - First icon computed font was `"Material Symbols Outlined"`.
+  - Icon max width stayed at `24px` instead of expanding into translated text.
+  - `document.documentElement.scrollWidth` stayed within the mobile viewport.
+  - Text fragments from the broken screenshot, including `EVENT+` and `TRENDING AREA`, were absent.
+  - Mobile bottom nav click from `/` to `/feed` worked.
+- `npm run typecheck -w @celine/web` passed.
+- `npm run build -w @celine/web` passed.
+- Browser console had no relevant `error` or `warn` entries during QA.
+
 ## Relevant Commits
 
 - `2bc0474 Configure web Hyperdrive binding`
@@ -183,6 +217,9 @@ QA performed for this adjustment:
 - `fa325b2 Fix Cloudflare Workers deploy command`
 - `d388a35 Use request scoped DB context for Workers`
 - `44de625 Improve mobile dashboard layout`
+- `5288e8b Document mobile responsive handoff notes`
+- `4259683 Balance summary insight panel`
+- `6f02cca Prevent mobile Chrome icon translation`
 
 ## Useful Verification Commands
 
