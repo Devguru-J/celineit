@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { Card, CardHeader, PlatformChip } from "~/components/ui";
 import { getSummary } from "~/lib/queries.server";
 
@@ -40,12 +40,16 @@ export default function Summary() {
             <div className="space-y-8">
               {recent.length === 0 && <p className="text-on-surface-variant font-body-md text-body-md">아직 데이터가 없습니다.</p>}
               {recent.map((c, i) => (
-                <div key={i} className="relative z-10 flex gap-6">
+                <Link
+                  key={i}
+                  to={`/item/post/${c.id}`}
+                  className="relative z-10 flex gap-6 group rounded-lg -m-2 p-2 hover:bg-surface-dim/30 transition-colors"
+                >
                   <div className="w-[40px] h-[40px] flex-shrink-0 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-surface">
                     <span className="material-symbols-outlined text-primary text-[20px]">post_add</span>
                   </div>
                   <div className="flex-1 pb-1">
-                    <p className="font-body-md text-body-md font-semibold line-clamp-1">{c.brand} · 신규 게시물 감지</p>
+                    <p className="font-body-md text-body-md font-semibold line-clamp-1 group-hover:text-primary transition-colors">{c.brand} · 신규 게시물 감지</p>
                     <div className="flex items-center gap-2 mt-1">
                       <PlatformChip platform={c.platform} />
                       <span className="font-label-muted text-label-muted text-on-surface-variant">{c.when}</span>
@@ -54,7 +58,7 @@ export default function Summary() {
                       <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant line-clamp-1 italic">"{c.caption}"</p>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -91,10 +95,10 @@ export default function Summary() {
               {brands.map((b) => (
                 <tr key={b.id} className="hover:bg-surface-dim/30 transition-colors">
                   <td className="px-container-padding py-4">
-                    <div className="flex items-center gap-3">
+                    <Link to={`/brands/${b.slug}`} className="flex items-center gap-3 group">
                       <div className="w-2 h-8 rounded-full bg-primary" style={{ opacity: 0.3 + 0.7 * (b.postsCount / maxPosts) }} />
-                      <span className="font-body-md text-body-md font-semibold">{b.name}</span>
-                    </div>
+                      <span className="font-body-md text-body-md font-semibold group-hover:text-primary transition-colors">{b.name}</span>
+                    </Link>
                   </td>
                   <td className="px-container-padding py-4 text-right tabular-nums font-body-md">{b.postsCount}</td>
                   <td className="px-container-padding py-4 text-right tabular-nums font-body-md">{b.adsCount}</td>

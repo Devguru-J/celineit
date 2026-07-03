@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { Card } from "~/components/ui";
 import { PLATFORM_META, type Platform } from "~/mock/data";
 import { getBrandsOverview } from "~/lib/queries.server";
@@ -33,7 +33,8 @@ export default function Brands() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
         {brands.map((b, idx) => (
-          <Card key={b.id} className="overflow-hidden hover:border-primary/40 hover:-translate-y-0.5 transition-all">
+          <Link key={b.id} to={`/brands/${b.slug}`} className="block">
+          <Card className="overflow-hidden hover:border-primary/40 hover:-translate-y-0.5 transition-all h-full">
             <div className={`h-20 bg-gradient-to-br ${SWATCHES[idx % SWATCHES.length]}`} />
             <div className="p-container-padding -mt-10">
               <div className="w-14 h-14 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-headline-sm font-bold text-primary shadow-sm">
@@ -59,6 +60,7 @@ export default function Brands() {
               </div>
             </div>
           </Card>
+          </Link>
         ))}
       </div>
     </div>

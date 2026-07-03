@@ -191,6 +191,102 @@ export async function getBrandsOverview() {
   }));
 }
 
+// 브랜드 상세: 해당 브랜드의 게시물 + 광고를 한 화면에 모아본다. slug 없으면 null.
+export async function getBrandDetail(slug: string) {
+  const db = getDb();
+  const [brand] = await db
+    .select({ id: brandsT.id, name: brandsT.name, slug: brandsT.slug })
+    .from(brandsT)
+    .where(eq(brandsT.slug, slug));
+  if (!brand) return null;
+
+  const postRows = await db
+    .select({
+      id: postsT.id,
+      platform: brandAccounts.platform,
+      caption: postsT.caption,
+      format: postsT.format,
+      postedAt: postsT.postedAt,
+      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
+      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
+      views: sql<number | null>`max(${postMetricsDaily.views})`,
+    })
+    .from(postsT)
+    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
+    .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
+    .where(eq(brandAccounts.brandId, brand.id))
+    .groupBy(postsT.id, brandAccounts.platform)
+    .orderBy(desc(postsT.postedAt))
+    .limit(120);
+
+  const adRows = await db
+    .select({
+      id: adsT.id,
+      adCopy: adsT.adCopy,
+      format: adsT.format,
+      lastSeen: adsT.lastSeen,
+      daysActive: adsT.daysActive,
+      platform: brandAccounts.platform,
+    })
+    .from(adsT)
+    .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
+    .where(and(eq(brandAccounts.brandId, brand.id), eq(adsT.isActive, true)))
+    .orderBy(desc(adsT.daysActive))
+    .limit(60);
+
+  // 헤더용 실제 총계 (아이템 목록은 위에서 캡됨)
+  const [[postTotal], [adTotal]] = await Promise.all([
+    db
+      .select({ n: sql<number>`count(${postsT.id})::int` })
+      .from(postsT)
+      .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
+      .where(eq(brandAccounts.brandId, brand.id)),
+    db
+      .select({ n: sql<number>`count(${adsT.id})::int` })
+      .from(adsT)
+      .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
+      .where(and(eq(brandAccounts.brandId, brand.id), eq(adsT.isActive, true))),
+  ]);
+
+  const postMedia = await firstMediaByOwner("post", postRows.map((p) => p.id));
+  const adMedia = await firstMediaByOwner("ad", adRows.map((a) => a.id));
+
+  const items: FeedItem[] = [
+    ...postRows.map((p) => ({
+      id: p.id,
+      kind: "post" as const,
+      brand: brand.name,
+      platform: p.platform as Platform,
+      text: p.caption,
+      format: p.format,
+      date: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+      likes: p.likes,
+      comments: p.comments,
+      views: p.views,
+      imageUrl: postMedia.get(p.id) ?? null,
+    })),
+    ...adRows.map((a) => ({
+      id: a.id,
+      kind: "ad" as const,
+      brand: brand.name,
+      platform: a.platform as Platform,
+      text: a.adCopy,
+      format: a.format,
+      date: a.lastSeen,
+      daysActive: a.daysActive,
+      imageUrl: adMedia.get(a.id) ?? null,
+    })),
+  ];
+  items.sort((x, y) => ((x.date ?? "") < (y.date ?? "") ? 1 : -1));
+
+  return {
+    brand,
+    postsCount: postTotal.n,
+    adsCount: adTotal.n,
+    items,
+  };
+}
+
 export async function getRuns() {
   const db = getDb();
   const rows = await db
@@ -245,6 +341,7 @@ export async function getSummary() {
   // 최근 변경: 최신 포스트 6건
   const recentPosts = await db
     .select({
+      id: postsT.id,
       brand: brandsT.name,
       platform: brandAccounts.platform,
       caption: postsT.caption,
@@ -266,6 +363,7 @@ export async function getSummary() {
       { label: "오늘 완료된 수집", value: String(runsToday.n), icon: "sync" },
     ],
     recent: recentPosts.map((r) => ({
+      id: r.id,
       brand: r.brand,
       platform: r.platform as Platform,
       caption: r.caption,
