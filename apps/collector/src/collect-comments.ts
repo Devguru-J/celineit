@@ -1,8 +1,8 @@
 // IG 댓글 수집 러너: 기존 instagram posts 를 순회하며 댓글 본문 수집 → 적재 → 키워드 재계산.
 //   DATABASE_URL=... APIFY_TOKEN=... npm run collect:comments -w @celine/collector [-- --brand=anua --max=50]
-import { brandAccounts, brands, createDb, posts as postsT } from "@celine/db";
-import { eq } from "drizzle-orm";
+import { createDb } from "@celine/db";
 import { ApifyClient } from "./apify";
+import { selectCommentTargets } from "./comment-targets";
 import { buildCommentInput, COMMENT_ACTOR, normalizeComments } from "./comments";
 import { ingestComments, recomputeCommentKeywords } from "./ingest-comments";
 import { createTokenizer } from "./keywords";
@@ -24,21 +24,8 @@ async function main() {
   const max = Number(arg("max") ?? 50);
   const brandSlug = arg("brand");
 
-  // 인스타 게시물 + 브랜드명(브랜드명은 키워드 제외어로 사용) 조회
-  const rows = await db
-    .select({
-      postId: postsT.id,
-      permalink: postsT.permalink,
-      platformPostId: postsT.platformPostId,
-      brandName: brands.name,
-      brandSlug: brands.slug,
-    })
-    .from(postsT)
-    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
-    .innerJoin(brands, eq(brandAccounts.brandId, brands.id))
-    .where(eq(brandAccounts.platform, "instagram"));
-
-  const targets = rows.filter((r) => !brandSlug || r.brandSlug === brandSlug);
+  // 활성 인스타 계정의 게시물만 (브랜드명은 키워드 제외어로 사용)
+  const targets = await selectCommentTargets(db, { brandSlug });
   if (targets.length === 0) {
     console.log("댓글 수집할 IG 게시물이 없습니다. 먼저 'npm run collect' 로 게시물을 수집하세요.");
     return;
