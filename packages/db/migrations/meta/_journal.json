@@ -8,6 +8,13 @@
       "when": 1782570740316,
       "tag": "0000_friendly_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783070914213,
+      "tag": "0001_yellow_oracle",
+      "breakpoints": true
     }
   ]
 }

@@ -84,6 +84,53 @@ export default function ItemDetail() {
             </Card>
           )}
 
+          {/* 댓글 키워드 (게시물만) */}
+          {detail.commentKeywords && (
+            <Card className="p-container-padding">
+              <h3 className="font-headline-sm text-headline-sm mb-1">댓글 키워드</h3>
+              <p className="font-label-muted text-label-muted text-on-surface-variant mb-3">
+                수집 댓글 {fmt(detail.commentKeywords.totalComments)}건 기준
+              </p>
+
+              {detail.commentKeywords.top.length > 0 && (
+                <div className="mb-4">
+                  <span className="font-label-muted text-label-muted text-on-surface-variant">최다 등장 Top 10</span>
+                  <div className="mt-2 space-y-1.5">
+                    {detail.commentKeywords.top.map((k) => {
+                      const maxCount = detail.commentKeywords!.top[0].count || 1;
+                      return (
+                        <div key={k.keyword} className="flex items-center gap-2">
+                          <span className="font-body-sm text-body-sm w-24 shrink-0 truncate">{k.keyword}</span>
+                          <div className="flex-1 h-2 rounded bg-surface-variant overflow-hidden">
+                            <div className="h-full bg-primary rounded" style={{ width: `${(k.count / maxCount) * 100}%` }} />
+                          </div>
+                          <span className="font-label-muted text-label-muted text-on-surface-variant w-8 text-right">{k.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <span className="font-label-muted text-label-muted text-on-surface-variant">집중 키워드 언급</span>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {detail.commentKeywords.focus.map((k) => (
+                    <span
+                      key={k.keyword}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-muted text-[11px] font-medium ${
+                        k.count > 0 ? "bg-primary-container/15 text-primary" : "bg-surface-variant text-on-surface-variant"
+                      }`}
+                    >
+                      {k.keyword}
+                      <b>{k.count}</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* 광고 longevity */}
           {detail.ad && (
             <Card className="p-container-padding">

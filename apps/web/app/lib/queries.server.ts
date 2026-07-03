@@ -5,11 +5,13 @@ import {
   brandAccounts,
   brands as brandsT,
   collectionRuns,
+  comments as commentsT,
+  commentKeywords,
   mediaAssets,
   postMetricsDaily,
   posts as postsT,
 } from "@celine/db";
-import type { Platform } from "@celine/shared";
+import { FOCUS_KEYWORDS, type Platform } from "@celine/shared";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getDb } from "./db.server";
 
@@ -368,6 +370,25 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
       .from(postMetricsDaily)
       .where(eq(postMetricsDaily.postId, id))
       .orderBy(postMetricsDaily.date);
+    const kwRows = await db
+      .select({ keyword: commentKeywords.keyword, kind: commentKeywords.kind, count: commentKeywords.count })
+      .from(commentKeywords)
+      .where(eq(commentKeywords.postId, id));
+    const [{ total } = { total: 0 }] = await db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(commentsT)
+      .where(eq(commentsT.postId, id));
+    const top = kwRows
+      .filter((k) => k.kind === "top")
+      .sort((a, b) => b.count - a.count)
+      .map((k) => ({ keyword: k.keyword, count: k.count }));
+    const focusStored = new Map(kwRows.filter((k) => k.kind === "focus").map((k) => [k.keyword, k.count]));
+    // FOCUS_KEYWORDS 전체를 노출(미언급=0), 언급 많은 순
+    const focus = FOCUS_KEYWORDS.map((kw) => ({ keyword: kw, count: focusStored.get(kw) ?? 0 })).sort(
+      (a, b) => b.count - a.count,
+    );
+    const commentKw =
+      top.length > 0 || total > 0 ? { top, focus, totalComments: total } : null;
     return {
       kind: "post" as const,
       brand: p.brand,
@@ -379,6 +400,7 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
       date: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
       media: media.map((m) => ({ url: m.url, kind: m.kind })),
       metricsHistory: metrics,
+      commentKeywords: commentKw,
       ad: null,
     };
   }
@@ -416,6 +438,7 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
     date: a.lastSeen,
     media: media.map((m) => ({ url: m.url, kind: m.kind })),
     metricsHistory: [],
+    commentKeywords: null,
     ad: {
       destinationUrl: a.destinationUrl,
       landingDomain: a.landingDomain,

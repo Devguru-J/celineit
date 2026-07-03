@@ -172,6 +172,39 @@ export const postMetricsDaily = pgTable(
   (t) => [primaryKey({ columns: [t.postId, t.date] })],
 );
 
+// ── 댓글 + 키워드 분석 ───────────────────────────────
+
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    platformCommentId: text("platform_comment_id").notNull(),
+    text: text("text"),
+    likeCount: integer("like_count"),
+    authorHandle: text("author_handle"),
+    postedAt: timestamp("posted_at", { withTimezone: true }),
+    raw: jsonb("raw"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("comments_post_platform_uniq").on(t.postId, t.platformCommentId)],
+);
+
+export const commentKeywords = pgTable(
+  "comment_keywords",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    keyword: text("keyword").notNull(),
+    kind: text("kind").notNull(), // "top" | "focus"
+    count: integer("count").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.keyword, t.kind] })],
+);
+
 // ── 분류 (🟡 2차, 스키마만 준비) ──────────────────────
 
 export const contentTags = pgTable("content_tags", {
@@ -195,5 +228,7 @@ export const schema = {
   adPresenceDaily,
   accountMetricsDaily,
   postMetricsDaily,
+  comments,
+  commentKeywords,
   contentTags,
 };
