@@ -55,7 +55,7 @@ export default function Trends() {
           <LineChart data={followerSeries} stroke="#3525cd" />
         ) : (
           <div className="h-40 flex flex-col items-center justify-center text-on-surface-variant gap-2">
-            <span className="material-symbols-outlined text-[32px] opacity-40">show_chart</span>
+            <span className="material-symbols-outlined notranslate text-[32px] opacity-40">show_chart</span>
             <p className="font-body-sm text-body-sm">팔로워 시계열은 매일 수집이 누적되면 그려집니다.</p>
           </div>
         )}
@@ -69,9 +69,9 @@ export default function Trends() {
               <MediaImage src={p.imageUrl} seed={p.id + (p.caption ?? "")} format={p.format} className="w-12 h-12 rounded flex-shrink-0" />
               <p className="font-body-md text-body-md flex-1 truncate">{p.caption}</p>
               <div className="hidden items-center gap-4 font-label-muted text-label-muted tabular-nums text-on-surface-variant sm:flex">
-                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">favorite</span>{fmt(p.likes ?? 0)}</span>
-                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">chat_bubble</span>{fmt(p.comments ?? 0)}</span>
-                {!!p.views && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">play_arrow</span>{fmt(p.views)}</span>}
+                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[16px]">favorite</span>{fmt(p.likes ?? 0)}</span>
+                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[16px]">chat_bubble</span>{fmt(p.comments ?? 0)}</span>
+                {!!p.views && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[16px]">play_arrow</span>{fmt(p.views)}</span>}
               </div>
             </Link>
           ))}

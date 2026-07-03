@@ -38,7 +38,7 @@ export default function AdminRuns() {
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{s.label}</span>
               <p className={`font-metric-lg text-metric-lg tabular-nums mt-2 ${s.tone}`}>{s.value}</p>
             </div>
-            <span className={`material-symbols-outlined text-[32px] ${s.tone}`}>{s.icon}</span>
+            <span className={`material-symbols-outlined notranslate text-[32px] ${s.tone}`}>{s.icon}</span>
           </Card>
         ))}
       </div>

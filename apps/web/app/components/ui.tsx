@@ -35,7 +35,7 @@ export function MediaPlaceholder({
   const icon = format === "video" ? "play_circle" : format === "carousel" ? "collections" : "image";
   return (
     <div className={`relative bg-gradient-to-br ${g} overflow-hidden ${className}`}>
-      <span className="material-symbols-outlined absolute inset-0 m-auto w-fit h-fit text-white/70 text-[28px]">
+      <span className="material-symbols-outlined notranslate absolute inset-0 m-auto w-fit h-fit text-white/70 text-[28px]">
         {icon}
       </span>
     </div>
@@ -70,7 +70,7 @@ export function MediaImage({
         }}
       />
       {format === "video" && (
-        <span className="material-symbols-outlined absolute top-1.5 right-1.5 text-white drop-shadow text-[20px]">
+        <span className="material-symbols-outlined notranslate absolute top-1.5 right-1.5 text-white drop-shadow text-[20px]">
           play_circle
         </span>
       )}

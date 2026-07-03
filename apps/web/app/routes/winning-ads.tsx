@@ -17,7 +17,7 @@ export default function WinningAds() {
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
       <div className="flex items-start gap-3 rounded bg-primary p-4 text-on-primary shadow-lg shadow-primary/20 sm:p-container-padding">
-        <span className="material-symbols-outlined">emoji_events</span>
+        <span className="material-symbols-outlined notranslate">emoji_events</span>
         <div>
           <h3 className="font-headline-sm text-headline-sm">지속 기간 = 성과 신호</h3>
           <p className="font-body-sm text-body-sm opacity-90 mt-1">
@@ -29,7 +29,7 @@ export default function WinningAds() {
 
       {ads.length === 0 ? (
         <Card className="p-12 text-center text-on-surface-variant">
-          <span className="material-symbols-outlined text-[40px] opacity-40">ad_units</span>
+          <span className="material-symbols-outlined notranslate text-[40px] opacity-40">ad_units</span>
           <p className="mt-2 font-body-md text-body-md">아직 광고지면 데이터가 없습니다. Meta 광고 계정을 추가해 수집하면 표시됩니다.</p>
         </Card>
       ) : (

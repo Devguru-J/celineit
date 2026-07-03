@@ -30,7 +30,7 @@ export default function Feed() {
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
       <Card className="flex items-center gap-2 overflow-x-auto p-3 sm:flex-wrap">
-        <span className="material-symbols-outlined ml-1 shrink-0 text-[20px] text-on-surface-variant">filter_list</span>
+        <span className="material-symbols-outlined notranslate ml-1 shrink-0 text-[20px] text-on-surface-variant">filter_list</span>
         {PLATFORMS.map((p) => (
           <button
             key={p}
@@ -59,7 +59,7 @@ export default function Feed() {
 
       {items.length === 0 ? (
         <Card className="p-12 text-center text-on-surface-variant">
-          <span className="material-symbols-outlined text-[40px] opacity-40">inbox</span>
+          <span className="material-symbols-outlined notranslate text-[40px] opacity-40">inbox</span>
           <p className="mt-2 font-body-md text-body-md">아직 수집된 데이터가 없습니다. 수집기를 실행해 주세요.</p>
         </Card>
       ) : (

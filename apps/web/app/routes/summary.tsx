@@ -25,7 +25,7 @@ export default function Summary() {
           >
             <div className="flex justify-between items-start">
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{k.label}</span>
-              <span className="material-symbols-outlined text-primary text-[20px]">{k.icon}</span>
+              <span className="material-symbols-outlined notranslate text-primary text-[20px]">{k.icon}</span>
             </div>
             <h3 className="font-metric-lg text-metric-lg tabular-nums mt-4">{k.value}</h3>
           </div>
@@ -46,7 +46,7 @@ export default function Summary() {
                   className="group relative z-10 -m-2 flex gap-4 rounded-lg p-2 transition-colors hover:bg-surface-dim/30 sm:gap-6"
                 >
                   <div className="w-[40px] h-[40px] flex-shrink-0 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-surface">
-                    <span className="material-symbols-outlined text-primary text-[20px]">post_add</span>
+                    <span className="material-symbols-outlined notranslate text-primary text-[20px]">post_add</span>
                   </div>
                   <div className="flex-1 pb-1">
                     <p className="font-body-md text-body-md font-semibold line-clamp-1 group-hover:text-primary transition-colors">{c.brand} · 신규 게시물 감지</p>
@@ -68,7 +68,7 @@ export default function Summary() {
         <div className="grid gap-card-gap lg:auto-rows-min">
           <div className="rounded bg-primary p-4 text-on-primary shadow-lg shadow-primary/20 sm:p-container-padding">
             <div className="mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+              <span className="material-symbols-outlined notranslate text-[20px]">auto_awesome</span>
               <span className="font-label-caps text-label-caps uppercase opacity-80">AI 인사이트 (예시)</span>
             </div>
             <p className="font-body-md text-body-md leading-relaxed">
@@ -83,7 +83,7 @@ export default function Summary() {
                 <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">오늘의 흐름</span>
                 <h3 className="mt-1 font-headline-sm text-headline-sm">최근 수집 요약</h3>
               </div>
-              <span className="material-symbols-outlined text-primary text-[22px]">monitoring</span>
+              <span className="material-symbols-outlined notranslate text-primary text-[22px]">monitoring</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {kpis.slice(2, 4).map((k) => (
@@ -97,7 +97,7 @@ export default function Summary() {
 
           <Card className="p-4 sm:p-container-padding">
             <div className="mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]">checklist</span>
+              <span className="material-symbols-outlined notranslate text-primary text-[20px]">checklist</span>
               <h3 className="font-headline-sm text-headline-sm">다음 확인 포인트</h3>
             </div>
             <div className="space-y-3">

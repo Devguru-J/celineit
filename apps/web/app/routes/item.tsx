@@ -22,7 +22,7 @@ export default function ItemDetail() {
   return (
     <div className="max-w-[1100px] space-y-card-gap p-4 sm:p-container-padding">
       <Link to="/feed" className="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary font-body-sm text-body-sm">
-        <span className="material-symbols-outlined text-[18px]">arrow_back</span> 피드로
+        <span className="material-symbols-outlined notranslate text-[18px]">arrow_back</span> 피드로
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
@@ -66,7 +66,7 @@ export default function ItemDetail() {
               <span>게시일 {detail.date ?? "—"}</span>
               {detail.permalink && (
                 <a href={detail.permalink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline ml-auto">
-                  원본 보기 <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                  원본 보기 <span className="material-symbols-outlined notranslate text-[16px]">open_in_new</span>
                 </a>
               )}
             </div>
@@ -157,7 +157,7 @@ export default function ItemDetail() {
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {detail.ad.platforms.map((p) => (
                       <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-variant font-label-muted text-[11px] font-medium">
-                        <span className="material-symbols-outlined text-[14px]">{platformIcon(p)}</span>
+                        <span className="material-symbols-outlined notranslate text-[14px]">{platformIcon(p)}</span>
                         {platformLabel(p)}
                       </span>
                     ))}
@@ -173,7 +173,7 @@ export default function ItemDetail() {
                 {detail.ad.pageCategories.length > 0 && <Row k="카테고리" v={detail.ad.pageCategories.join(", ")} />}
               </div>
               <p className="mt-3 pt-3 border-t border-outline-variant font-label-muted text-[11px] text-on-surface-variant leading-relaxed">
-                <span className="material-symbols-outlined text-[13px] align-middle mr-0.5">info</span>
+                <span className="material-symbols-outlined notranslate text-[13px] align-middle mr-0.5">info</span>
                 노출수·지출·CTR 은 Meta 가 상업광고에 대해 비공개합니다. 광고 <b>지속일수</b>가 성과 대리지표이며, 오래·여러 변형으로 게재될수록 효과가 좋다는 신호입니다.
               </p>
             </Card>
@@ -190,7 +190,7 @@ export default function ItemDetail() {
         </Card>
       ) : (
         <Card className="p-4 font-body-sm text-body-sm text-on-surface-variant sm:p-container-padding">
-          <span className="material-symbols-outlined text-[18px] align-middle mr-1">history</span>
+          <span className="material-symbols-outlined notranslate text-[18px] align-middle mr-1">history</span>
           변화 추이는 매일 수집이 누적되면 그려집니다 (현재 스냅샷 {detail.metricsHistory.length || 1}개).
         </Card>
       )}
@@ -217,7 +217,7 @@ function Metric({ icon, label, value }: { icon: string; label: string; value: nu
   return (
     <div>
       <div className="flex items-center gap-1 text-on-surface-variant">
-        <span className="material-symbols-outlined text-[16px]">{icon}</span>
+        <span className="material-symbols-outlined notranslate text-[16px]">{icon}</span>
         <span className="font-label-muted text-label-muted">{label}</span>
       </div>
       <p className="font-metric-md text-metric-md tabular-nums mt-1">{value != null ? fmt(value) : "—"}</p>

@@ -18,7 +18,7 @@ export function Sidebar() {
       {/* Brand header */}
       <div className="px-4 mb-8 flex items-center gap-3">
         <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary">
-          <span className="material-symbols-outlined text-[20px]">insights</span>
+          <span className="material-symbols-outlined notranslate text-[20px]">insights</span>
         </div>
         <div>
           <h1 className="font-headline-sm text-headline-sm font-bold text-primary">Celine</h1>
@@ -44,7 +44,7 @@ export function Sidebar() {
               ].join(" ")
             }
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <span className="material-symbols-outlined notranslate">{item.icon}</span>
             <span className="font-body-md text-body-md">{item.label}</span>
           </NavLink>
         ))}
@@ -60,7 +60,7 @@ export function Sidebar() {
             <p className="font-body-md text-body-md font-semibold truncate">Celine Intelligence</p>
             <p className="font-label-muted text-label-muted text-on-surface-variant truncate">내부 전용 툴</p>
           </div>
-          <span className="material-symbols-outlined text-[20px] text-on-surface-variant">logout</span>
+          <span className="material-symbols-outlined notranslate text-[20px] text-on-surface-variant">logout</span>
         </div>
       </div>
     </aside>
@@ -87,7 +87,7 @@ export function MobileNav() {
               ].join(" ")
             }
           >
-            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+            <span className="material-symbols-outlined notranslate text-[22px]">{item.icon}</span>
             <span className="max-w-full truncate">{item.label}</span>
           </NavLink>
         ))}

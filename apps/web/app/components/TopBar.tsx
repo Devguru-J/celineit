@@ -18,7 +18,7 @@ export function TopBar() {
     <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-outline-variant bg-background/95 px-4 backdrop-blur lg:left-[240px] lg:h-16 lg:px-container-padding">
       <div className="flex min-w-0 items-center gap-3 lg:gap-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary text-on-primary lg:hidden">
-          <span className="material-symbols-outlined text-[20px]">insights</span>
+          <span className="material-symbols-outlined notranslate text-[20px]">insights</span>
         </div>
         <h2 className="truncate font-headline-sm text-headline-sm font-bold text-primary">{title}</h2>
         <div className="mx-2 hidden h-4 w-[1px] bg-outline-variant sm:block" />
@@ -30,7 +30,7 @@ export function TopBar() {
       </div>
       <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
         <div className="relative hidden w-64 lg:block">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+          <span className="material-symbols-outlined notranslate absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
             search
           </span>
           <input
@@ -40,10 +40,10 @@ export function TopBar() {
           />
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
-          <button className="material-symbols-outlined text-on-surface-variant hover:text-primary duration-200">
+          <button className="material-symbols-outlined notranslate text-on-surface-variant hover:text-primary duration-200">
             notifications
           </button>
-          <button className="material-symbols-outlined text-on-surface-variant hover:text-primary duration-200">
+          <button className="material-symbols-outlined notranslate text-on-surface-variant hover:text-primary duration-200">
             help_outline
           </button>
         </div>

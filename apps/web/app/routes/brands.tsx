@@ -26,7 +26,7 @@ export default function Brands() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-body-md text-body-md text-on-surface-variant">모니터링 중인 브랜드 {brands.length}개</p>
         <button className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-body-sm text-body-sm font-semibold text-on-primary transition-opacity hover:opacity-90 sm:w-auto">
-          <span className="material-symbols-outlined text-[18px]">add</span>
+          <span className="material-symbols-outlined notranslate text-[18px]">add</span>
           브랜드 추가
         </button>
       </div>

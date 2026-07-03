@@ -28,14 +28,14 @@ export function FeedItemCard({ item: i }: { item: FeedItem }) {
             <span className="font-label-muted text-label-muted text-on-surface-variant">{i.date}</span>
             {i.kind === "ad" ? (
               <span className="flex items-center gap-1 font-label-muted text-label-muted text-primary">
-                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                <span className="material-symbols-outlined notranslate text-[14px]">schedule</span>
                 {i.daysActive}일째
               </span>
             ) : (
               <div className="flex items-center gap-3 font-label-muted text-label-muted text-on-surface-variant tabular-nums">
-                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[14px]">favorite</span>{fmt(i.likes ?? 0)}</span>
-                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[14px]">chat_bubble</span>{fmt(i.comments ?? 0)}</span>
-                {!!i.views && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[14px]">play_arrow</span>{fmt(i.views)}</span>}
+                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[14px]">favorite</span>{fmt(i.likes ?? 0)}</span>
+                <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[14px]">chat_bubble</span>{fmt(i.comments ?? 0)}</span>
+                {!!i.views && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined notranslate text-[14px]">play_arrow</span>{fmt(i.views)}</span>}
               </div>
             )}
           </div>

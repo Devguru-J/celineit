@@ -30,7 +30,7 @@ export default function BrandDetail() {
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
       <Link to="/brands" className="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary font-body-sm text-body-sm">
-        <span className="material-symbols-outlined text-[18px]">arrow_back</span> 브랜드 목록으로
+        <span className="material-symbols-outlined notranslate text-[18px]">arrow_back</span> 브랜드 목록으로
       </Link>
 
       {/* 헤더 */}
@@ -64,7 +64,7 @@ export default function BrandDetail() {
 
       {/* 유형 필터 */}
       <Card className="flex items-center gap-2 overflow-x-auto p-3 sm:flex-wrap">
-        <span className="material-symbols-outlined text-on-surface-variant text-[20px] ml-1">filter_list</span>
+        <span className="material-symbols-outlined notranslate text-on-surface-variant text-[20px] ml-1">filter_list</span>
         {KINDS.map((k) => (
           <button
             key={k}
@@ -81,7 +81,7 @@ export default function BrandDetail() {
 
       {filtered.length === 0 ? (
         <Card className="p-12 text-center text-on-surface-variant">
-          <span className="material-symbols-outlined text-[40px] opacity-40">inbox</span>
+          <span className="material-symbols-outlined notranslate text-[40px] opacity-40">inbox</span>
           <p className="mt-2 font-body-md text-body-md">아직 수집된 데이터가 없습니다.</p>
         </Card>
       ) : (
