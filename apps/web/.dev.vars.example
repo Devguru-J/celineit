@@ -1,0 +1,4 @@
+# 로컬 dev(workerd)용. 이 파일을 .dev.vars 로 복사 후 값 채우기. (.dev.vars 는 gitignore)
+# Hyperdrive 바인딩의 로컬 연결 문자열 — 배포 환경에선 Hyperdrive 가 대신 처리하므로 불필요.
+# 형식: WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_<바인딩이름>
+WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://postgres.hwndnkallorbypiedowm:<PASSWORD>@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"

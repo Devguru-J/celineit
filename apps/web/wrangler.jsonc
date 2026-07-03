@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "celineit",
+  "compatibility_date": "2025-04-01",
+  // postgres.js(=@celine/db)가 Node 소켓 API를 쓰므로 필수.
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./workers/app.ts",
+  // React Router 클라이언트 빌드를 정적 에셋으로 서빙. SSR 은 main worker 가 처리.
+  "assets": { "directory": "./build/client" },
+  "observability": { "enabled": true },
+  // Supabase Postgres 를 감싸는 Hyperdrive (커넥션 풀링+캐싱).
+  //   1) 생성:  npx wrangler hyperdrive create celine-db --connection-string="<Supabase Transaction 풀러 URL>"
+  //   2) 출력된 id 를 아래 "id" 에 기입.
+  //   3) 로컬 dev 는 .dev.vars 의 WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE 사용.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<YOUR_HYPERDRIVE_ID>"
+    }
+  ]
+}
