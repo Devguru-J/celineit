@@ -107,12 +107,55 @@ Current fix:
 
 This was validated with five repeated local requests returning HTTP 200.
 
+## Mobile Responsive Layout
+
+Mobile layout was improved after the deployed app showed the desktop sidebar consuming roughly half the phone viewport.
+
+Current responsive shell:
+
+- `apps/web/app/root.tsx`
+  - Desktop keeps the left sidebar and `lg:ml-[240px]`.
+  - Mobile removes the left margin, uses full-width content, and adds bottom padding so the bottom nav does not cover content.
+- `apps/web/app/components/Sidebar.tsx`
+  - Desktop sidebar is hidden below `lg`.
+  - `NAV_ITEMS` is exported and reused by `MobileNav`.
+  - `MobileNav` shows the first five primary destinations in a fixed bottom tab bar: summary, feed, winning ads, trends, calendar.
+- `apps/web/app/components/TopBar.tsx`
+  - Mobile uses a compact 56px header with brand icon, title, notifications, and help.
+  - Desktop keeps the search field and system status.
+
+Do not reintroduce `ml-[240px]` or `left-[240px]` globally. Those offsets must remain `lg:` scoped or mobile will break again.
+
+Several route files were also adjusted so cards, filters, tables, and detail rows do not overflow on phones:
+
+- `summary.tsx`
+- `feed.tsx`
+- `winning-ads.tsx`
+- `trends.tsx`
+- `calendar.tsx`
+- `brands.tsx`
+- `brand-detail.tsx`
+- `admin-runs.tsx`
+- `item.tsx`
+- `components/feed-card.tsx`
+
+Responsive QA performed:
+
+- Mobile viewport: `390x844`
+- Desktop viewport: `1280x800`
+- Checked mobile routes: `/`, `/feed`, `/winning-ads`, `/trends`, `/calendar`, `/brands`, `/admin/runs`
+- All checked mobile routes had `documentElement.scrollWidth <= window.innerWidth + 2`.
+- Mobile bottom nav interaction was verified by clicking `Feed` and confirming navigation to `/feed`.
+- Desktop sidebar/search remained visible at `1280x800`.
+- Browser console had no relevant `error` or `warn` entries during QA.
+
 ## Relevant Commits
 
 - `2bc0474 Configure web Hyperdrive binding`
 - `ee49151 Fix local Workers dev setup`
 - `fa325b2 Fix Cloudflare Workers deploy command`
 - `d388a35 Use request scoped DB context for Workers`
+- `44de625 Improve mobile dashboard layout`
 
 ## Useful Verification Commands
 
@@ -130,3 +173,5 @@ curl -s -o /tmp/celineit-home.html -w "%{http_code}\n" http://localhost:5173/
 ```
 
 If port `5173` is in use, Vite will choose another port. Use the port printed by the dev server.
+
+For mobile responsive smoke checks, use a browser viewport around `390x844` and inspect `document.documentElement.scrollWidth` against `window.innerWidth` on the main routes listed above.
