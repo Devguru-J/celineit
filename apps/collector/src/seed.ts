@@ -11,68 +11,42 @@ type SeedBrand = {
 };
 
 // 일본 시장 화장품 경쟁사 (L'Oréal Japan 기준). 핸들은 필요시 교체.
+// 일본 시장 K-뷰티 경쟁사 (2026-07-03 대상 교체). 일본 공식 IG 계정(웹 리서치 검증, high confidence).
+// 이번 범위는 Instagram(댓글 수집 대상)만. TikTok/X 핸들은 후속 확장 시 검증 후 추가.
 const SEED_BRANDS: SeedBrand[] = [
   {
-    name: "資生堂 Shiseido",
-    slug: "shiseido",
+    name: "Anua アヌア",
+    slug: "anua",
     accounts: [
-      { platform: "instagram", handle: "@shiseido" },
-      { platform: "twitter", handle: "@SHISEIDO_brand" },
-      { platform: "tiktok", handle: "@shiseido" },
-      {
-        platform: "meta_ads",
-        handle: "Shiseido",
-        // Shiseido Group 資生堂 공식 페이지 ID (Meta Ad Library)
-        profileUrl:
-          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=548424035180811&media_type=all",
-      },
+      { platform: "instagram", handle: "@anua.jp" }, // Anua JAPAN OFFICIAL
     ],
   },
   {
-    name: "SK-II",
-    slug: "sk-ii",
+    name: "VT Cosmetics VTコスメティックス",
+    slug: "vt-cosmetics",
     accounts: [
-      { platform: "instagram", handle: "@skii" },
-      { platform: "twitter", handle: "@SKII_Japan" },
-      { platform: "tiktok", handle: "@skii_official_jp" },
-      {
-        platform: "meta_ads",
-        handle: "SK-II",
-        profileUrl:
-          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=210782685643962&media_type=all",
-      },
+      { platform: "instagram", handle: "@vtcosmetics_japan" }, // VT JAPAN OFFICIAL
     ],
   },
   {
-    name: "KATE TOKYO",
-    slug: "kate-tokyo",
+    name: "medicube メディキューブ",
+    slug: "medicube",
     accounts: [
-      { platform: "instagram", handle: "@kate.tokyo.official_jp" },
-      { platform: "twitter", handle: "@KATETOKYO_PR" },
-      { platform: "tiktok", handle: "@kate.tokyo" },
+      { platform: "instagram", handle: "@medicube_officialjapan" }, // メディキューブ 公式
     ],
   },
   {
-    name: "CANMAKE TOKYO",
-    slug: "canmake",
+    name: "manyo マニョ",
+    slug: "manyo",
     accounts: [
-      { platform: "instagram", handle: "@canmaketokyo" },
-      { platform: "twitter", handle: "@CanmakeTokyo" },
-      { platform: "tiktok", handle: "@canmaketokyo_official" },
-      {
-        platform: "meta_ads",
-        handle: "CANMAKE",
-        profileUrl:
-          "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=JP&view_all_page_id=157974871060271&media_type=all",
-      },
+      { platform: "instagram", handle: "@manyo.japan" }, // manyo 日本公式
     ],
   },
   {
-    name: "CEZANNE",
-    slug: "cezanne",
+    name: "aestura エストラ",
+    slug: "aestura",
     accounts: [
-      { platform: "instagram", handle: "@cezannecosmetics" },
-      { platform: "twitter", handle: "@cezannecosme" },
+      { platform: "instagram", handle: "@aestura_jp" }, // AESTURA JAPAN Official
     ],
   },
 ];
