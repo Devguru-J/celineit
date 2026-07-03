@@ -16,7 +16,7 @@ export default function Trends() {
 
   if (!trends) {
     return (
-      <div className="p-container-padding">
+      <div className="p-4 sm:p-container-padding">
         <Card className="p-12 text-center text-on-surface-variant">데이터가 없습니다.</Card>
       </div>
     );
@@ -26,8 +26,8 @@ export default function Trends() {
   const hasFollowers = followerSeries.length >= 2 && followerSeries.some((p) => p.value > 0);
 
   return (
-    <div className="p-container-padding space-y-card-gap">
-      <Card className="p-container-padding flex flex-wrap items-center gap-6">
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
+      <Card className="flex flex-wrap items-center gap-4 p-4 sm:gap-6 sm:p-container-padding">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-700 to-fuchsia-500" />
         <div>
           <div className="flex items-center gap-2">
@@ -36,7 +36,7 @@ export default function Trends() {
           </div>
           <p className="font-label-muted text-label-muted text-on-surface-variant">{account.handle}</p>
         </div>
-        <div className="flex gap-8 ml-auto">
+        <div className="grid w-full grid-cols-2 gap-4 sm:ml-auto sm:w-auto sm:flex sm:gap-8">
           <div>
             <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">팔로워</p>
             <p className="font-metric-lg text-metric-lg tabular-nums">{account.followers ? fmt(account.followers) : "—"}</p>
@@ -48,7 +48,7 @@ export default function Trends() {
         </div>
       </Card>
 
-      <Card className="p-container-padding">
+      <Card className="p-4 sm:p-container-padding">
         <h3 className="font-headline-sm text-headline-sm mb-1">일별 팔로워</h3>
         <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">하루 단위 순 팔로워 수</p>
         {hasFollowers ? (
@@ -65,10 +65,10 @@ export default function Trends() {
         <CardHeader title="성과 상위 게시물" />
         <div className="divide-y divide-outline-variant">
           {topPosts.map((p) => (
-            <Link key={p.id} to={`/item/post/${p.id}`} className="flex items-center gap-4 px-container-padding py-3 hover:bg-surface-dim/30 transition-colors">
+            <Link key={p.id} to={`/item/post/${p.id}`} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-dim/30 sm:items-center sm:gap-4 sm:px-container-padding">
               <MediaImage src={p.imageUrl} seed={p.id + (p.caption ?? "")} format={p.format} className="w-12 h-12 rounded flex-shrink-0" />
               <p className="font-body-md text-body-md flex-1 truncate">{p.caption}</p>
-              <div className="flex items-center gap-4 font-label-muted text-label-muted text-on-surface-variant tabular-nums">
+              <div className="hidden items-center gap-4 font-label-muted text-label-muted tabular-nums text-on-surface-variant sm:flex">
                 <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">favorite</span>{fmt(p.likes ?? 0)}</span>
                 <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">chat_bubble</span>{fmt(p.comments ?? 0)}</span>
                 {!!p.views && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[16px]">play_arrow</span>{fmt(p.views)}</span>}

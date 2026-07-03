@@ -20,7 +20,7 @@ export default function ItemDetail() {
   const latest = detail.metricsHistory.at(-1);
 
   return (
-    <div className="p-container-padding space-y-card-gap max-w-[1100px]">
+    <div className="max-w-[1100px] space-y-card-gap p-4 sm:p-container-padding">
       <Link to="/feed" className="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary font-body-sm text-body-sm">
         <span className="material-symbols-outlined text-[18px]">arrow_back</span> 피드로
       </Link>
@@ -52,8 +52,8 @@ export default function ItemDetail() {
 
         {/* 정보 */}
         <div className="space-y-card-gap">
-          <Card className="p-container-padding">
-            <div className="flex items-center gap-2 mb-3">
+          <Card className="p-4 sm:p-container-padding">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               <PlatformChip platform={detail.platform} withIcon />
               <span className="font-body-md text-body-md font-semibold">{detail.brand}</span>
               <span className="font-label-muted text-label-muted text-on-surface-variant">{detail.handle}</span>
@@ -62,7 +62,7 @@ export default function ItemDetail() {
               </span>
             </div>
             <p className="font-body-md text-body-md whitespace-pre-line">{detail.title}</p>
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-outline-variant font-label-muted text-label-muted text-on-surface-variant">
+            <div className="mt-4 flex flex-col gap-2 border-t border-outline-variant pt-4 font-label-muted text-label-muted text-on-surface-variant sm:flex-row sm:items-center sm:gap-4">
               <span>게시일 {detail.date ?? "—"}</span>
               {detail.permalink && (
                 <a href={detail.permalink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline ml-auto">
@@ -74,9 +74,9 @@ export default function ItemDetail() {
 
           {/* 현재 지표 */}
           {latest && (
-            <Card className="p-container-padding">
+            <Card className="p-4 sm:p-container-padding">
               <h3 className="font-headline-sm text-headline-sm mb-3">현재 지표</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <Metric icon="favorite" label="좋아요" value={latest.likes} />
                 <Metric icon="chat_bubble" label="댓글" value={latest.comments} />
                 <Metric icon="play_arrow" label="조회수" value={latest.views} />
@@ -86,7 +86,7 @@ export default function ItemDetail() {
 
           {/* 댓글 키워드 (게시물만) */}
           {detail.commentKeywords && (
-            <Card className="p-container-padding">
+            <Card className="p-4 sm:p-container-padding">
               <h3 className="font-headline-sm text-headline-sm mb-1">댓글 키워드</h3>
               <p className="font-label-muted text-label-muted text-on-surface-variant mb-3">
                 수집 댓글 {fmt(detail.commentKeywords.totalComments)}건 기준
@@ -133,9 +133,9 @@ export default function ItemDetail() {
 
           {/* 광고 longevity */}
           {detail.ad && (
-            <Card className="p-container-padding">
+            <Card className="p-4 sm:p-container-padding">
               <h3 className="font-headline-sm text-headline-sm mb-3">광고 지속 현황</h3>
-              <div className="grid grid-cols-2 gap-3 font-body-sm text-body-sm">
+              <div className="grid grid-cols-1 gap-3 font-body-sm text-body-sm sm:grid-cols-2">
                 <Row k="활성 일수" v={`${detail.ad.daysActive}일`} />
                 <Row k="상태" v={detail.ad.isActive ? "활성" : "종료"} />
                 <Row k="최초 관측" v={detail.ad.firstSeen} />
@@ -149,7 +149,7 @@ export default function ItemDetail() {
 
           {/* 광고 인텔리전스 (Ad Library raw 기반 유효 지표) */}
           {detail.ad && (
-            <Card className="p-container-padding">
+            <Card className="p-4 sm:p-container-padding">
               <h3 className="font-headline-sm text-headline-sm mb-3">광고 인텔리전스</h3>
               {detail.ad.platforms.length > 0 && (
                 <div className="mb-3">
@@ -164,7 +164,7 @@ export default function ItemDetail() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3 font-body-sm text-body-sm">
+              <div className="grid grid-cols-1 gap-3 font-body-sm text-body-sm sm:grid-cols-2">
                 {detail.ad.displayFormat && <Row k="광고 포맷" v={formatLabel(detail.ad.displayFormat)} />}
                 {detail.ad.cta && <Row k="행동유도(CTA)" v={detail.ad.cta} />}
                 {detail.ad.variantCount && <Row k="변형 수" v={`${detail.ad.variantCount}개`} />}
@@ -183,13 +183,13 @@ export default function ItemDetail() {
 
       {/* 지표 변화 추이 (시간에 따라 어떻게 바뀌었는지) */}
       {detail.metricsHistory.length >= 2 ? (
-        <Card className="p-container-padding">
+        <Card className="p-4 sm:p-container-padding">
           <h3 className="font-headline-sm text-headline-sm mb-1">지표 변화 추이</h3>
           <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">일별 좋아요 추이</p>
           <LineChart data={detail.metricsHistory.map((m) => ({ value: m.likes ?? 0 }))} stroke="#3525cd" />
         </Card>
       ) : (
-        <Card className="p-container-padding text-on-surface-variant font-body-sm text-body-sm">
+        <Card className="p-4 font-body-sm text-body-sm text-on-surface-variant sm:p-container-padding">
           <span className="material-symbols-outlined text-[18px] align-middle mr-1">history</span>
           변화 추이는 매일 수집이 누적되면 그려집니다 (현재 스냅샷 {detail.metricsHistory.length || 1}개).
         </Card>
@@ -199,7 +199,7 @@ export default function ItemDetail() {
       {similar.length > 0 && (
         <Card>
           <CardHeader title="같은 브랜드의 다른 콘텐츠" action={<span className="font-label-muted text-label-muted text-on-surface-variant">유사 광고 클러스터링은 2차 단계</span>} />
-          <div className="p-container-padding grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:p-container-padding lg:grid-cols-6">
             {similar.map((s) => (
               <Link key={s.id} to={`/item/post/${s.id}`} className="block group">
                 <MediaImage src={s.imageUrl} seed={s.id + (s.caption ?? "")} format={s.format} className="w-full aspect-square rounded group-hover:opacity-80 transition-opacity" />

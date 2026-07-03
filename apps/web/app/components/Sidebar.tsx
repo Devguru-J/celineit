@@ -2,7 +2,7 @@ import { NavLink } from "react-router";
 
 type NavItem = { to: string; icon: string; label: string; end?: boolean };
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   { to: "/", icon: "dashboard", label: "요약", end: true },
   { to: "/feed", icon: "rss_feed", label: "피드" },
   { to: "/winning-ads", icon: "star", label: "위닝 광고" },
@@ -14,7 +14,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col py-container-padding px-stack-sm z-50">
+    <aside className="fixed left-0 top-0 z-50 hidden h-full w-[240px] flex-col border-r border-outline-variant bg-surface px-stack-sm py-container-padding lg:flex">
       {/* Brand header */}
       <div className="px-4 mb-8 flex items-center gap-3">
         <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary">
@@ -64,5 +64,34 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+export function MobileNav() {
+  const items = NAV_ITEMS.slice(0, 5);
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-outline-variant bg-surface/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-8px_24px_rgba(26,27,34,0.08)] backdrop-blur lg:hidden">
+      <div className="grid grid-cols-5 gap-1">
+        {items.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              [
+                "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded px-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.98]",
+                isActive
+                  ? "bg-primary-container/10 text-primary"
+                  : "text-on-surface-variant hover:bg-surface-container",
+              ].join(" ")
+            }
+          >
+            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+            <span className="max-w-full truncate">{item.label}</span>
+          </NavLink>
+        ))}
+      </div>
+    </nav>
   );
 }

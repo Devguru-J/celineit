@@ -22,10 +22,10 @@ const SWATCHES = [
 export default function Brands() {
   const { brands } = useLoaderData<typeof loader>();
   return (
-    <div className="p-container-padding space-y-card-gap">
-      <div className="flex items-center justify-between">
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-body-md text-body-md text-on-surface-variant">모니터링 중인 브랜드 {brands.length}개</p>
-        <button className="flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-body-sm text-body-sm font-semibold hover:opacity-90 transition-opacity">
+        <button className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-body-sm text-body-sm font-semibold text-on-primary transition-opacity hover:opacity-90 sm:w-auto">
           <span className="material-symbols-outlined text-[18px]">add</span>
           브랜드 추가
         </button>
@@ -36,7 +36,7 @@ export default function Brands() {
           <Link key={b.id} to={`/brands/${b.slug}`} className="block">
           <Card className="overflow-hidden hover:border-primary/40 hover:-translate-y-0.5 transition-all h-full">
             <div className={`h-20 bg-gradient-to-br ${SWATCHES[idx % SWATCHES.length]}`} />
-            <div className="p-container-padding -mt-10">
+            <div className="-mt-10 p-4 sm:p-container-padding">
               <div className="w-14 h-14 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-headline-sm font-bold text-primary shadow-sm">
                 {b.name.replace(/[^A-Za-z가-힣ぁ-んァ-ン一-龥]/g, "").charAt(0) || "B"}
               </div>

@@ -28,33 +28,33 @@ export default function Feed() {
   );
 
   return (
-    <div className="p-container-padding space-y-card-gap">
-      <Card className="p-3 flex flex-wrap items-center gap-2">
-        <span className="material-symbols-outlined text-on-surface-variant text-[20px] ml-1">filter_list</span>
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
+      <Card className="flex items-center gap-2 overflow-x-auto p-3 sm:flex-wrap">
+        <span className="material-symbols-outlined ml-1 shrink-0 text-[20px] text-on-surface-variant">filter_list</span>
         {PLATFORMS.map((p) => (
           <button
             key={p}
             onClick={() => setPlatform(p)}
-            className={`px-3 py-1.5 rounded-full font-body-sm text-body-sm transition-colors ${
+            className={`shrink-0 rounded-full px-3 py-1.5 font-body-sm text-body-sm transition-colors ${
               platform === p ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
             }`}
           >
             {p === "all" ? "전체 플랫폼" : PLATFORM_META[p].label}
           </button>
         ))}
-        <div className="h-5 w-[1px] bg-outline-variant mx-2" />
+        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
         {KINDS.map((k) => (
           <button
             key={k}
             onClick={() => setKind(k)}
-            className={`px-3 py-1.5 rounded-full font-body-sm text-body-sm transition-colors ${
+            className={`shrink-0 rounded-full px-3 py-1.5 font-body-sm text-body-sm transition-colors ${
               kind === k ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
             }`}
           >
             {k === "all" ? "전체 유형" : k === "ad" ? "광고" : "게시물"}
           </button>
         ))}
-        <span className="ml-auto font-label-muted text-label-muted text-on-surface-variant pr-2">{items.length}개</span>
+        <span className="ml-auto shrink-0 pr-2 font-label-muted text-label-muted text-on-surface-variant">{items.length}개</span>
       </Card>
 
       {items.length === 0 ? (

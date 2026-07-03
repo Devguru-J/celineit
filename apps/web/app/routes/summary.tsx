@@ -15,13 +15,13 @@ export default function Summary() {
   const maxPosts = Math.max(1, ...brands.map((b) => b.postsCount));
 
   return (
-    <div className="p-container-padding space-y-card-gap">
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
       {/* KPI 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-card-gap">
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="bg-surface-container-lowest border border-outline-variant rounded p-container-padding flex flex-col justify-between hover:border-primary/50 hover:-translate-y-0.5 transition-all"
+            className="flex min-h-[132px] flex-col justify-between rounded border border-outline-variant bg-surface-container-lowest p-4 transition-all hover:-translate-y-0.5 hover:border-primary/50 sm:p-container-padding"
           >
             <div className="flex justify-between items-start">
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{k.label}</span>
@@ -36,14 +36,14 @@ export default function Summary() {
         {/* 최근 변경 (최신 게시물) */}
         <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader title="최근 변경" />
-          <div className="p-container-padding relative timeline-line">
+          <div className="timeline-line relative p-4 sm:p-container-padding">
             <div className="space-y-8">
               {recent.length === 0 && <p className="text-on-surface-variant font-body-md text-body-md">아직 데이터가 없습니다.</p>}
               {recent.map((c, i) => (
                 <Link
                   key={i}
                   to={`/item/post/${c.id}`}
-                  className="relative z-10 flex gap-6 group rounded-lg -m-2 p-2 hover:bg-surface-dim/30 transition-colors"
+                  className="group relative z-10 -m-2 flex gap-4 rounded-lg p-2 transition-colors hover:bg-surface-dim/30 sm:gap-6"
                 >
                   <div className="w-[40px] h-[40px] flex-shrink-0 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-surface">
                     <span className="material-symbols-outlined text-primary text-[20px]">post_add</span>
@@ -65,7 +65,7 @@ export default function Summary() {
         </Card>
 
         {/* AI 인사이트 (예시) */}
-        <div className="bg-primary p-container-padding rounded text-on-primary shadow-lg shadow-primary/20 h-fit">
+          <div className="h-fit rounded bg-primary p-4 text-on-primary shadow-lg shadow-primary/20 sm:p-container-padding">
           <div className="flex items-center gap-2 mb-2">
             <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
             <span className="font-label-caps text-label-caps uppercase opacity-80">AI 인사이트 (예시)</span>

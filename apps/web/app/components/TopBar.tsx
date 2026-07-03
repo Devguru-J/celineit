@@ -15,28 +15,31 @@ export function TopBar() {
   const title = TITLES[pathname] ?? "Celine";
 
   return (
-    <header className="fixed top-0 left-[240px] right-0 h-16 bg-background border-b border-outline-variant flex items-center justify-between px-container-padding z-40">
-      <div className="flex items-center gap-4">
-        <h2 className="font-headline-sm text-headline-sm font-bold text-primary">{title}</h2>
-        <div className="h-4 w-[1px] bg-outline-variant mx-2" />
-        <div className="flex items-center gap-2 text-on-surface-variant">
+    <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-outline-variant bg-background/95 px-4 backdrop-blur lg:left-[240px] lg:h-16 lg:px-container-padding">
+      <div className="flex min-w-0 items-center gap-3 lg:gap-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary text-on-primary lg:hidden">
+          <span className="material-symbols-outlined text-[20px]">insights</span>
+        </div>
+        <h2 className="truncate font-headline-sm text-headline-sm font-bold text-primary">{title}</h2>
+        <div className="mx-2 hidden h-4 w-[1px] bg-outline-variant sm:block" />
+        <div className="hidden items-center gap-2 text-on-surface-variant sm:flex">
           <span className="font-label-muted text-label-muted">시스템 상태:</span>
           <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
           <span className="font-label-muted text-label-muted text-emerald-600 font-medium">정상</span>
         </div>
       </div>
-      <div className="flex items-center gap-6">
-        <div className="relative w-64">
+      <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+        <div className="relative hidden w-64 lg:block">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
             search
           </span>
           <input
-            className="w-full pl-10 pr-4 py-1.5 bg-surface-container rounded-full border-none focus:ring-1 focus:ring-primary text-body-sm transition-all"
+            className="w-full rounded-full border-none bg-surface-container py-1.5 pl-10 pr-4 text-body-sm transition-all focus:ring-1 focus:ring-primary"
             placeholder="브랜드, 광고 검색..."
             type="text"
           />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button className="material-symbols-outlined text-on-surface-variant hover:text-primary duration-200">
             notifications
           </button>

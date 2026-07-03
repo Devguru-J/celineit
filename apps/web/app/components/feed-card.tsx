@@ -8,12 +8,12 @@ export function FeedItemCard({ item: i }: { item: FeedItem }) {
   return (
     <Link to={`/item/${i.kind}/${i.id}`} className="block">
       <Card className="overflow-hidden flex flex-col hover:border-primary/40 hover:-translate-y-0.5 transition-all h-full">
-        <MediaImage src={i.imageUrl} seed={i.id + (i.text ?? "")} format={i.format} className="h-44 w-full" />
+        <MediaImage src={i.imageUrl} seed={i.id + (i.text ?? "")} format={i.format} className="h-48 w-full sm:h-44" />
         <div className="p-4 flex flex-col gap-2 flex-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <PlatformChip platform={i.platform} withIcon />
-              <span className="font-label-muted text-label-muted text-on-surface-variant">{i.brand}</span>
+              <span className="truncate font-label-muted text-label-muted text-on-surface-variant">{i.brand}</span>
             </div>
             <span
               className={`px-1.5 py-0.5 rounded font-label-muted text-[10px] font-bold ${
@@ -24,7 +24,7 @@ export function FeedItemCard({ item: i }: { item: FeedItem }) {
             </span>
           </div>
           <p className="font-body-sm text-body-sm line-clamp-2 flex-1 whitespace-pre-line">{i.text}</p>
-          <div className="flex items-center justify-between pt-2 border-t border-outline-variant mt-1">
+          <div className="mt-1 flex items-center justify-between gap-3 border-t border-outline-variant pt-2">
             <span className="font-label-muted text-label-muted text-on-surface-variant">{i.date}</span>
             {i.kind === "ad" ? (
               <span className="flex items-center gap-1 font-label-muted text-label-muted text-primary">

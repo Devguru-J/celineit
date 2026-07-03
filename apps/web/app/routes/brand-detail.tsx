@@ -28,13 +28,13 @@ export default function BrandDetail() {
   );
 
   return (
-    <div className="p-container-padding space-y-card-gap">
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
       <Link to="/brands" className="inline-flex items-center gap-1 text-on-surface-variant hover:text-primary font-body-sm text-body-sm">
         <span className="material-symbols-outlined text-[18px]">arrow_back</span> 브랜드 목록으로
       </Link>
 
       {/* 헤더 */}
-      <Card className="p-container-padding flex flex-wrap items-center justify-between gap-4">
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-container-padding">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-headline-sm font-bold text-primary shadow-sm">
             {brand.name.replace(/[^A-Za-z가-힣ぁ-んァ-ン一-龥]/g, "").charAt(0) || "B"}
@@ -50,7 +50,7 @@ export default function BrandDetail() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-8 pr-2">
+        <div className="grid w-full grid-cols-2 gap-4 pr-0 sm:w-auto sm:flex sm:items-center sm:gap-8 sm:pr-2">
           <div className="text-right">
             <p className="font-metric-md text-metric-md tabular-nums">{postsCount}</p>
             <p className="font-label-muted text-label-muted text-on-surface-variant">수집 게시물</p>
@@ -63,20 +63,20 @@ export default function BrandDetail() {
       </Card>
 
       {/* 유형 필터 */}
-      <Card className="p-3 flex flex-wrap items-center gap-2">
+      <Card className="flex items-center gap-2 overflow-x-auto p-3 sm:flex-wrap">
         <span className="material-symbols-outlined text-on-surface-variant text-[20px] ml-1">filter_list</span>
         {KINDS.map((k) => (
           <button
             key={k}
             onClick={() => setKind(k)}
-            className={`px-3 py-1.5 rounded-full font-body-sm text-body-sm transition-colors ${
+            className={`shrink-0 rounded-full px-3 py-1.5 font-body-sm text-body-sm transition-colors ${
               kind === k ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
             }`}
           >
             {k === "all" ? "전체 유형" : k === "ad" ? "광고" : "게시물"}
           </button>
         ))}
-        <span className="ml-auto font-label-muted text-label-muted text-on-surface-variant pr-2">{filtered.length}개</span>
+        <span className="ml-auto shrink-0 pr-2 font-label-muted text-label-muted text-on-surface-variant">{filtered.length}개</span>
       </Card>
 
       {filtered.length === 0 ? (

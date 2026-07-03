@@ -30,10 +30,10 @@ export default function AdminRuns() {
   ];
 
   return (
-    <div className="p-container-padding space-y-card-gap">
+    <div className="space-y-card-gap p-4 sm:p-container-padding">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-card-gap">
         {cards.map((s) => (
-          <Card key={s.label} className="p-container-padding flex items-center justify-between">
+          <Card key={s.label} className="flex items-center justify-between p-4 sm:p-container-padding">
             <div>
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{s.label}</span>
               <p className={`font-metric-lg text-metric-lg tabular-nums mt-2 ${s.tone}`}>{s.value}</p>

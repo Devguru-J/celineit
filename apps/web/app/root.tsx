@@ -8,7 +8,7 @@ import {
 import type { LinksFunction } from "react-router";
 
 import "./app.css";
-import { Sidebar } from "./components/Sidebar";
+import { MobileNav, Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 
 export const links: LinksFunction = () => [
@@ -48,7 +48,8 @@ export default function App() {
     <>
       <Sidebar />
       <TopBar />
-      <main className="ml-[240px] pt-16 min-h-screen">
+      <MobileNav />
+      <main className="min-h-screen px-0 pb-[calc(76px+env(safe-area-inset-bottom))] pt-14 lg:ml-[240px] lg:pb-0 lg:pt-16">
         <Outlet />
       </main>
     </>
