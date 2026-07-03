@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "react-router dev",
+    "dev": "set -a; [ -f .dev.vars ] && . ./.dev.vars; set +a; react-router dev",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "deploy": "npm run build && wrangler deploy",

@@ -12,6 +12,16 @@ export function initDb(connectionString: string): Database {
 }
 
 export function getDb(): Database {
-  if (!_db) throw new Error("DB 미초기화 — worker fetch 핸들러에서 initDb() 를 먼저 호출해야 합니다.");
+  if (!_db) {
+    const localConnectionString =
+      typeof process !== "undefined"
+        ? process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE ??
+          process.env.WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE
+        : undefined;
+
+    if (localConnectionString) return initDb(localConnectionString);
+
+    throw new Error("DB 미초기화 — worker fetch 핸들러에서 initDb() 를 먼저 호출해야 합니다.");
+  }
   return _db;
 }
