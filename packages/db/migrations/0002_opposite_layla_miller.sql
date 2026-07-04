@@ -1,0 +1,1 @@
+ALTER TYPE "public"."platform" ADD VALUE 'tiktok_ads' BEFORE 'bereal';

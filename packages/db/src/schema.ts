@@ -21,6 +21,7 @@ export const platformEnum = pgEnum("platform", [
   "instagram",
   "twitter",
   "tiktok",
+  "tiktok_ads",
   "bereal", // 미사용(수집 대상 아님). enum 값 제거는 마이그레이션 필요해 남겨둠 — @celine/shared PLATFORMS 가 실제 대상.
 ]);
 export const cadenceEnum = pgEnum("cadence", ["daily", "every_2d"]);

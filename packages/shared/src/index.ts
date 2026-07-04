@@ -1,10 +1,10 @@
 // 공용 상수/타입 — web · db · collector 가 함께 사용.
 
-export const PLATFORMS = ["meta_ads", "instagram", "twitter", "tiktok"] as const;
+export const PLATFORMS = ["meta_ads", "instagram", "twitter", "tiktok", "tiktok_ads"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 // 실수집 대상 매체 — 여기가 "원하는 매체" 단일 설정 지점.
-export const ACTIVE_PLATFORMS: Platform[] = ["meta_ads", "instagram", "twitter", "tiktok"];
+export const ACTIVE_PLATFORMS: Platform[] = ["meta_ads", "instagram", "twitter", "tiktok", "tiktok_ads"];
 
 // 수집 대상 국가 — "원하는 국가" 단일 설정 지점. Meta Ad Library country 파라미터 등에 사용.
 // 전체 지역을 원하면 "ALL" 로 변경.
@@ -19,6 +19,7 @@ export const DEFAULT_APIFY_ACTORS: Record<Platform, string | null> = {
   instagram: "apify~instagram-scraper",
   twitter: "apidojo~tweet-scraper",
   tiktok: "clockworks~tiktok-scraper",
+  tiktok_ads: "ivanvs~tiktok-ad-library-scraper",
 };
 
 // 어댑터가 Apify raw item 을 정규화한 결과 — DB 적재 직전의 중립 형태.
