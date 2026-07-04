@@ -168,3 +168,49 @@ export function LineChart({
     </svg>
   );
 }
+
+// KPI 증감 배지 — 방향(up/down/flat) + 텍스트.
+export function KpiDelta({ dir, text }: { dir: "up" | "down" | "flat"; text: string }) {
+  const cfg =
+    dir === "up"
+      ? { icon: "trending_up", cls: "text-emerald-600 bg-emerald-50" }
+      : dir === "down"
+        ? { icon: "trending_down", cls: "text-rose-600 bg-rose-50" }
+        : { icon: "trending_flat", cls: "text-on-surface-variant bg-surface-container" };
+  return (
+    <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-label-caps text-[10px] ${cfg.cls}`}>
+      <span className="material-symbols-outlined notranslate text-[14px]">{cfg.icon}</span>
+      {text}
+    </span>
+  );
+}
+
+// 간단한 SVG 막대 차트 (LineChart 패턴).
+export function BarChart({
+  data,
+  height = 140,
+  color = "#3525cd",
+}: {
+  data: { value: number }[];
+  height?: number;
+  color?: string;
+}) {
+  const w = 600;
+  const h = height;
+  const pad = 8;
+  const n = data.length;
+  if (n === 0) return null;
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const slot = (w - pad * 2) / n;
+  const barW = Math.max(2, slot * 0.6);
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
+      {data.map((d, i) => {
+        const bh = (d.value / max) * (h - pad * 2);
+        const x = pad + i * slot + (slot - barW) / 2;
+        const y = h - pad - bh;
+        return <rect key={i} x={x} y={y} width={barW} height={bh} rx="2" fill={color} opacity={0.35 + 0.65 * (d.value / max)} />;
+      })}
+    </svg>
+  );
+}

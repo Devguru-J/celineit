@@ -1,6 +1,7 @@
 // 서버 전용: 대시보드 각 화면용 실데이터 쿼리.
 import {
   accountMetricsDaily,
+  adPresenceDaily,
   ads as adsT,
   brandAccounts,
   brands as brandsT,
@@ -323,52 +324,80 @@ export async function getRuns() {
   });
 }
 
+export type KpiDelta = { dir: "up" | "down" | "flat"; text: string };
+
+// 증감 배지용 퍼센트 델타. prev=0 이면 신규/미표시 처리.
+function pctDelta(cur: number, prev: number): KpiDelta | undefined {
+  if (prev === 0) return cur > 0 ? { dir: "up", text: "신규" } : undefined;
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  return { dir: pct > 0 ? "up" : pct < 0 ? "down" : "flat", text: `${pct > 0 ? "+" : ""}${pct}%` };
+}
+
 export async function getSummary() {
   const db = getDb();
-  const [[brandCount], [activeAds], [weekPosts], [runsToday]] = await Promise.all([
+  const [
+    [brandCount],
+    [newBrands7d],
+    [activeAds],
+    [activeAdsYesterday],
+    [weekPosts],
+    [prevWeekPosts],
+    [runsToday],
+    [runsYesterday],
+  ] = await Promise.all([
     db.select({ n: sql<number>`count(*)::int` }).from(brandsT),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(brandsT)
+      .where(gte(brandsT.createdAt, sql`now() - interval '7 days'`)),
     db.select({ n: sql<number>`count(*)::int` }).from(adsT).where(eq(adsT.isActive, true)),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(adPresenceDaily)
+      .where(and(eq(adPresenceDaily.date, sql`current_date - 1`), eq(adPresenceDaily.wasActive, true))),
     db
       .select({ n: sql<number>`count(*)::int` })
       .from(postsT)
       .where(gte(postsT.postedAt, sql`now() - interval '7 days'`)),
     db
       .select({ n: sql<number>`count(*)::int` })
+      .from(postsT)
+      .where(
+        and(
+          gte(postsT.postedAt, sql`now() - interval '14 days'`),
+          sql`${postsT.postedAt} < now() - interval '7 days'`,
+        ),
+      ),
+    db
+      .select({ n: sql<number>`count(*)::int` })
       .from(collectionRuns)
       .where(and(eq(collectionRuns.status, "done"), gte(collectionRuns.startedAt, sql`now() - interval '1 day'`))),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(collectionRuns)
+      .where(
+        and(
+          eq(collectionRuns.status, "done"),
+          gte(collectionRuns.startedAt, sql`now() - interval '2 days'`),
+          sql`${collectionRuns.startedAt} < now() - interval '1 day'`,
+        ),
+      ),
   ]);
-
-  // 최근 변경: 최신 포스트 6건
-  const recentPosts = await db
-    .select({
-      id: postsT.id,
-      brand: brandsT.name,
-      platform: brandAccounts.platform,
-      caption: postsT.caption,
-      postedAt: postsT.postedAt,
-    })
-    .from(postsT)
-    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
-    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
-    .orderBy(desc(postsT.postedAt))
-    .limit(6);
 
   const brandsOverview = await getBrandsOverview();
 
   return {
     kpis: [
-      { label: "추적 중인 브랜드", value: String(brandCount.n), icon: "analytics" },
-      { label: "활성 광고", value: String(activeAds.n), icon: "ad_units" },
-      { label: "최근 7일 신규 게시물", value: String(weekPosts.n), icon: "post_add" },
-      { label: "오늘 완료된 수집", value: String(runsToday.n), icon: "sync" },
+      {
+        label: "추적 중인 브랜드",
+        value: String(brandCount.n),
+        icon: "analytics",
+        delta: newBrands7d.n > 0 ? ({ dir: "up", text: `+${newBrands7d.n} 이번 주` } as KpiDelta) : undefined,
+      },
+      { label: "활성 광고", value: String(activeAds.n), icon: "ad_units", delta: pctDelta(activeAds.n, activeAdsYesterday.n) },
+      { label: "최근 7일 신규 게시물", value: String(weekPosts.n), icon: "post_add", delta: pctDelta(weekPosts.n, prevWeekPosts.n) },
+      { label: "오늘 완료된 수집", value: String(runsToday.n), icon: "sync", delta: pctDelta(runsToday.n, runsYesterday.n) },
     ],
-    recent: recentPosts.map((r) => ({
-      id: r.id,
-      brand: r.brand,
-      platform: r.platform as Platform,
-      caption: r.caption,
-      when: r.postedAt ? r.postedAt.toISOString().slice(0, 10) : "",
-    })),
     brands: brandsOverview,
   };
 }
@@ -622,4 +651,210 @@ export async function getCalendar() {
   return [...byDate.entries()]
     .map(([date, v]) => ({ date, count: v.count, platforms: [...v.platforms] }))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+// 팔로워 성장: accountMetricsDaily.followers 를 날짜별 합산(최근 30일) + 플랫폼별 현재 + 집계 델타.
+export async function getFollowerGrowth() {
+  const db = getDb();
+  const rows = await db
+    .select({
+      date: accountMetricsDaily.date,
+      platform: brandAccounts.platform,
+      followers: accountMetricsDaily.followers,
+    })
+    .from(accountMetricsDaily)
+    .innerJoin(brandAccounts, eq(accountMetricsDaily.brandAccountId, brandAccounts.id))
+    .where(gte(accountMetricsDaily.date, sql`current_date - 30`))
+    .orderBy(accountMetricsDaily.date);
+
+  const totalByDate = new Map<string, number>();
+  for (const r of rows) {
+    if (r.followers == null) continue;
+    totalByDate.set(r.date, (totalByDate.get(r.date) ?? 0) + r.followers);
+  }
+  const series = [...totalByDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, total]) => ({ date, total }));
+
+  // 최신 날짜의 플랫폼별 팔로워 합
+  const latestDate = series.length ? series[series.length - 1].date : null;
+  const byPlatformMap = new Map<Platform, number>();
+  if (latestDate) {
+    for (const r of rows) {
+      if (r.date !== latestDate || r.followers == null) continue;
+      byPlatformMap.set(r.platform as Platform, (byPlatformMap.get(r.platform as Platform) ?? 0) + r.followers);
+    }
+  }
+  const byPlatform = [...byPlatformMap.entries()]
+    .map(([platform, followers]) => ({ platform, followers }))
+    .sort((a, b) => b.followers - a.followers);
+
+  const first = series.length ? series[0].total : 0;
+  const last = series.length ? series[series.length - 1].total : 0;
+  const deltaPct = series.length >= 2 && first > 0 ? Math.round(((last - first) / first) * 1000) / 10 : null;
+
+  return { series, byPlatform, deltaPct };
+}
+
+export type RecentChangeKind = "new_ad" | "ad_inactive" | "follower_spike" | "new_post";
+export type RecentChange = {
+  id: string;
+  kind: RecentChangeKind;
+  brand: string;
+  platform: Platform;
+  text: string | null;
+  when: string; // YYYY-MM-DD
+  imageUrl: string | null;
+  linkTo: string;
+};
+
+// 팔로워 급증 감지 임계값(24h, %).
+const FOLLOWER_SPIKE_PCT = 3;
+
+// 최근 변경: 신규 광고 / 광고 비활성화 / 팔로워 급증 / (부족 시)신규 포스트.
+export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
+  const db = getDb();
+
+  // (a) 신규 광고 — 최근 firstSeen
+  const newAds = await db
+    .select({
+      id: adsT.id,
+      brand: brandsT.name,
+      platform: brandAccounts.platform,
+      copy: adsT.adCopy,
+      when: adsT.firstSeen,
+    })
+    .from(adsT)
+    .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
+    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+    .orderBy(desc(adsT.firstSeen))
+    .limit(limit);
+
+  // (b) 광고 비활성화 — isActive=false, 최근 lastSeen
+  const inactiveAds = await db
+    .select({
+      id: adsT.id,
+      brand: brandsT.name,
+      platform: brandAccounts.platform,
+      copy: adsT.adCopy,
+      when: adsT.lastSeen,
+    })
+    .from(adsT)
+    .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
+    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+    .where(eq(adsT.isActive, false))
+    .orderBy(desc(adsT.lastSeen))
+    .limit(limit);
+
+  // (c) 팔로워 급증 — 최근 7일 계정별 최소/최대 팔로워 비교
+  const metricRows = await db
+    .select({
+      brand: brandsT.name,
+      slug: brandsT.slug,
+      platform: brandAccounts.platform,
+      date: accountMetricsDaily.date,
+      followers: accountMetricsDaily.followers,
+    })
+    .from(accountMetricsDaily)
+    .innerJoin(brandAccounts, eq(accountMetricsDaily.brandAccountId, brandAccounts.id))
+    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+    .where(gte(accountMetricsDaily.date, sql`current_date - 7`))
+    .orderBy(accountMetricsDaily.date);
+
+  type Acc = { brand: string; slug: string; platform: Platform; firstF: number; lastF: number; lastDate: string };
+  const perAccount = new Map<string, Acc>();
+  for (const r of metricRows) {
+    if (r.followers == null) continue;
+    const key = `${r.brand}|${r.platform}`;
+    const cur = perAccount.get(key);
+    if (!cur) {
+      perAccount.set(key, {
+        brand: r.brand,
+        slug: r.slug,
+        platform: r.platform as Platform,
+        firstF: r.followers,
+        lastF: r.followers,
+        lastDate: r.date,
+      });
+    } else {
+      cur.lastF = r.followers;
+      cur.lastDate = r.date;
+    }
+  }
+  const spikes: RecentChange[] = [];
+  for (const a of perAccount.values()) {
+    if (a.firstF > 0 && (a.lastF - a.firstF) / a.firstF >= FOLLOWER_SPIKE_PCT / 100) {
+      const gain = a.lastF - a.firstF;
+      spikes.push({
+        id: `${a.slug}-${a.platform}`,
+        kind: "follower_spike",
+        brand: a.brand,
+        platform: a.platform,
+        text: `팔로워 +${gain.toLocaleString()} (최근 7일)`,
+        when: a.lastDate,
+        imageUrl: null,
+        linkTo: `/brands/${a.slug}`,
+      });
+    }
+  }
+
+  // 이벤트 병합
+  const adMedia = await firstMediaByOwner("ad", [...newAds, ...inactiveAds].map((a) => a.id));
+  const events: RecentChange[] = [
+    ...newAds.map((a) => ({
+      id: a.id,
+      kind: "new_ad" as const,
+      brand: a.brand,
+      platform: a.platform as Platform,
+      text: a.copy,
+      when: a.when,
+      imageUrl: adMedia.get(a.id) ?? null,
+      linkTo: `/item/ad/${a.id}`,
+    })),
+    ...inactiveAds.map((a) => ({
+      id: a.id,
+      kind: "ad_inactive" as const,
+      brand: a.brand,
+      platform: a.platform as Platform,
+      text: a.copy,
+      when: a.when,
+      imageUrl: adMedia.get(a.id) ?? null,
+      linkTo: `/item/ad/${a.id}`,
+    })),
+    ...spikes,
+  ];
+
+  // 부족하면 최신 포스트로 보충
+  if (events.length < limit) {
+    const posts = await db
+      .select({
+        id: postsT.id,
+        brand: brandsT.name,
+        platform: brandAccounts.platform,
+        caption: postsT.caption,
+        postedAt: postsT.postedAt,
+      })
+      .from(postsT)
+      .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
+      .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+      .orderBy(desc(postsT.postedAt))
+      .limit(limit);
+    const postMedia = await firstMediaByOwner("post", posts.map((p) => p.id));
+    for (const p of posts) {
+      events.push({
+        id: p.id,
+        kind: "new_post",
+        brand: p.brand,
+        platform: p.platform as Platform,
+        text: p.caption,
+        when: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : "",
+        imageUrl: postMedia.get(p.id) ?? null,
+        linkTo: `/item/post/${p.id}`,
+      });
+    }
+  }
+
+  return events
+    .sort((a, b) => (a.when < b.when ? 1 : a.when > b.when ? -1 : 0))
+    .slice(0, limit);
 }

@@ -1,17 +1,26 @@
 import { Link, useLoaderData } from "react-router";
-import { Card, CardHeader, PlatformChip } from "~/components/ui";
-import { getSummary } from "~/lib/queries.server";
+import { BarChart, Card, CardHeader, KpiDelta, PlatformChip } from "~/components/ui";
+import { getFollowerGrowth, getRecentChanges, getSummary, type RecentChangeKind } from "~/lib/queries.server";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 요약" }];
 }
 
 export async function loader() {
-  return await getSummary();
+  const [summary, recent, followerGrowth] = await Promise.all([getSummary(), getRecentChanges(), getFollowerGrowth()]);
+  return { ...summary, recent, followerGrowth };
 }
 
+// 이벤트 타입별 표시.
+const CHANGE_META: Record<RecentChangeKind, { icon: string; label: string; cls: string }> = {
+  new_ad: { icon: "campaign", label: "신규 광고 감지", cls: "text-primary bg-primary-container/20" },
+  ad_inactive: { icon: "block", label: "광고 비활성화", cls: "text-rose-600 bg-rose-50" },
+  follower_spike: { icon: "trending_up", label: "팔로워 급증", cls: "text-emerald-600 bg-emerald-50" },
+  new_post: { icon: "post_add", label: "신규 게시물", cls: "text-primary bg-primary-container/20" },
+};
+
 export default function Summary() {
-  const { kpis, recent, brands } = useLoaderData<typeof loader>();
+  const { kpis, recent, brands, followerGrowth } = useLoaderData<typeof loader>();
   const maxPosts = Math.max(1, ...brands.map((b) => b.postsCount));
 
   return (
@@ -27,39 +36,55 @@ export default function Summary() {
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{k.label}</span>
               <span className="material-symbols-outlined notranslate text-primary text-[20px]">{k.icon}</span>
             </div>
-            <h3 className="font-metric-lg text-metric-lg tabular-nums mt-4">{k.value}</h3>
+            <div className="mt-4 flex items-end justify-between gap-2">
+              <h3 className="font-metric-lg text-metric-lg tabular-nums">{k.value}</h3>
+              {k.delta && <KpiDelta dir={k.delta.dir} text={k.delta.text} />}
+            </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
-        {/* 최근 변경 (최신 게시물) */}
+        {/* 최근 변경 (타입별 이벤트) */}
         <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader title="최근 변경" />
           <div className="timeline-line relative p-4 sm:p-container-padding">
             <div className="space-y-8">
               {recent.length === 0 && <p className="text-on-surface-variant font-body-md text-body-md">아직 데이터가 없습니다.</p>}
-              {recent.map((c, i) => (
-                <Link
-                  key={i}
-                  to={`/item/post/${c.id}`}
-                  className="group relative z-10 -m-2 flex gap-4 rounded-lg p-2 transition-colors hover:bg-surface-dim/30 sm:gap-6"
-                >
-                  <div className="w-[40px] h-[40px] flex-shrink-0 rounded-full bg-primary-container/20 flex items-center justify-center border-2 border-surface">
-                    <span className="material-symbols-outlined notranslate text-primary text-[20px]">post_add</span>
-                  </div>
-                  <div className="flex-1 pb-1">
-                    <p className="font-body-md text-body-md font-semibold line-clamp-1 group-hover:text-primary transition-colors">{c.brand} · 신규 게시물 감지</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <PlatformChip platform={c.platform} />
-                      <span className="font-label-muted text-label-muted text-on-surface-variant">{c.when}</span>
-                    </div>
-                    {c.caption && (
-                      <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant line-clamp-1 italic">"{c.caption}"</p>
+              {recent.map((c) => {
+                const m = CHANGE_META[c.kind];
+                return (
+                  <Link
+                    key={`${c.kind}-${c.id}`}
+                    to={c.linkTo}
+                    className="group relative z-10 -m-2 flex gap-4 rounded-lg p-2 transition-colors hover:bg-surface-dim/30 sm:gap-6"
+                  >
+                    {c.imageUrl ? (
+                      <img
+                        src={c.imageUrl}
+                        alt=""
+                        className="h-[40px] w-[40px] flex-shrink-0 rounded-lg border-2 border-surface object-cover"
+                      />
+                    ) : (
+                      <div className={`flex h-[40px] w-[40px] flex-shrink-0 items-center justify-center rounded-full border-2 border-surface ${m.cls}`}>
+                        <span className="material-symbols-outlined notranslate text-[20px]">{m.icon}</span>
+                      </div>
                     )}
-                  </div>
-                </Link>
-              ))}
+                    <div className="flex-1 pb-1">
+                      <p className="font-body-md text-body-md font-semibold line-clamp-1 group-hover:text-primary transition-colors">
+                        {c.brand} · {m.label}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <PlatformChip platform={c.platform} />
+                        <span className="font-label-muted text-label-muted text-on-surface-variant">{c.when}</span>
+                      </div>
+                      {c.text && (
+                        <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant line-clamp-1 italic">"{c.text}"</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </Card>
@@ -77,22 +102,32 @@ export default function Summary() {
             </p>
           </div>
 
+          {/* 팔로워 성장 */}
           <Card className="p-4 sm:p-container-padding">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">오늘의 흐름</span>
-                <h3 className="mt-1 font-headline-sm text-headline-sm">최근 수집 요약</h3>
+                <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">크로스 플랫폼</span>
+                <h3 className="mt-1 font-headline-sm text-headline-sm">팔로워 성장</h3>
               </div>
-              <span className="material-symbols-outlined notranslate text-primary text-[22px]">monitoring</span>
+              {followerGrowth.deltaPct != null && (
+                <KpiDelta dir={followerGrowth.deltaPct >= 0 ? "up" : "down"} text={`${followerGrowth.deltaPct > 0 ? "+" : ""}${followerGrowth.deltaPct}%`} />
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {kpis.slice(2, 4).map((k) => (
-                <div key={k.label} className="rounded bg-surface-container-low p-3">
-                  <p className="font-label-muted text-label-muted text-on-surface-variant">{k.label}</p>
-                  <p className="mt-2 font-metric-md text-metric-md tabular-nums">{k.value}</p>
+            {followerGrowth.series.length === 0 ? (
+              <p className="font-body-sm text-body-sm text-on-surface-variant">아직 팔로워 시계열이 없습니다.</p>
+            ) : (
+              <>
+                <BarChart data={followerGrowth.series.map((s) => ({ value: s.total }))} height={120} />
+                <div className="mt-4 space-y-2">
+                  {followerGrowth.byPlatform.map((p) => (
+                    <div key={p.platform} className="flex items-center justify-between">
+                      <PlatformChip platform={p.platform} withIcon />
+                      <span className="font-body-sm text-body-sm tabular-nums">{p.followers.toLocaleString()}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </Card>
 
           <Card className="p-4 sm:p-container-padding">
