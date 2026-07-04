@@ -326,16 +326,21 @@ export async function getRuns() {
     .orderBy(desc(collectionRuns.startedAt))
     .limit(50);
 
+  const staleRunningCutoffMs = 60 * 60 * 1000;
   return rows.map((r) => {
+    const isStaleRunning =
+      r.status === "running" && r.startedAt && Date.now() - r.startedAt.getTime() > staleRunningCutoffMs;
     const dur =
       r.finishedAt && r.startedAt
         ? `${Math.max(0, Math.round((r.finishedAt.getTime() - r.startedAt.getTime()) / 1000))}초`
+        : isStaleRunning && r.startedAt
+          ? `${Math.max(1, Math.round((Date.now() - r.startedAt.getTime()) / 60000))}분 경과`
         : "—";
     return {
       id: r.id,
       brand: r.brand,
       platform: r.platform as Platform,
-      status: r.status,
+      status: isStaleRunning ? "stale" : r.status,
       items: r.itemCount,
       lastRun: r.startedAt ? r.startedAt.toISOString().slice(11, 16) : "—",
       error: r.error,

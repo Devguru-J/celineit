@@ -61,6 +61,7 @@ The main user-facing goals were:
   - Added manual collection controls: select all, brand-level selection, platform-level selection, selected-combination preview, per-account max item cap, and submit state.
   - The route action calls the collector worker `POST /manual-collect` endpoint with `COLLECTOR_URL` and `COLLECTOR_SECRET`.
   - The execution prep panel now also shows collection progress: queued count from the last manual request, current `running` jobs from `collection_runs`, latest status, recent run rows, and a manual refresh button.
+  - Stale `running` rows older than 1 hour are displayed as `중단됨` instead of live `실행 중`.
 
 - `apps/collector/src/worker.ts`
   - Added `POST /manual-collect`.
@@ -254,6 +255,14 @@ git diff --check
 ```
 
 After adding the admin collection progress panel, these checks were run again and passed:
+
+```bash
+npm run typecheck -w @celine/web
+npm run build -w @celine/web
+git diff --check
+```
+
+After fixing stale `running` collection display, these checks were run again and passed:
 
 ```bash
 npm run typecheck -w @celine/web

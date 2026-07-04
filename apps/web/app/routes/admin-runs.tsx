@@ -67,6 +67,7 @@ export async function action({ request, context }: { request: Request; context?:
 const STATUS_STYLE: Record<string, { label: string; cls: string; dot: string }> = {
   done: { label: "완료", cls: "bg-[#D8C28A]/15 text-[#D8C28A]", dot: "bg-[#C8A45D]" },
   running: { label: "실행 중", cls: "bg-primary-container/15 text-primary", dot: "bg-primary animate-pulse" },
+  stale: { label: "중단됨", cls: "bg-error-container/70 text-error", dot: "bg-error" },
   error: { label: "오류", cls: "bg-error-container text-error", dot: "bg-error" },
 };
 
