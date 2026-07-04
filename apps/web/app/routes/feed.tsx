@@ -34,6 +34,11 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
   return <span className="shrink-0 font-label-muted text-label-muted uppercase tracking-wide text-on-surface-variant opacity-70">{children}</span>;
 }
 
+// 필터 그룹 사이 세로 구분선
+function Divider() {
+  return <div className="mx-1 hidden h-10 w-px self-center bg-outline-variant sm:block" />;
+}
+
 export default function Feed() {
   const { items: all, brands } = useLoaderData<typeof loader>();
   const [platform, setPlatform] = useState<"all" | Platform>("all");
@@ -69,40 +74,52 @@ export default function Feed() {
 
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
-      <Card className="flex flex-wrap items-center gap-2 p-3">
-        <span className="material-symbols-outlined notranslate ml-1 shrink-0 text-[20px] text-on-surface-variant">filter_list</span>
-        {PLATFORMS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPlatform(p)}
-            className={`shrink-0 rounded-full px-3 py-1.5 font-body-sm text-body-sm transition-colors ${
-              platform === p ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
-            }`}
-          >
-            {p === "all" ? "전체 플랫폼" : PLATFORM_META[p].label}
-          </button>
-        ))}
+      <Card className="flex flex-wrap items-center gap-x-4 gap-y-3 p-3 sm:px-4">
+        {/* 플랫폼 */}
+        <div className="flex flex-col gap-1">
+          <GroupLabel>플랫폼</GroupLabel>
+          <div className="flex flex-wrap gap-2">
+            {PLATFORMS.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPlatform(p)}
+                className={`shrink-0 rounded-full px-3 py-1 font-body-sm text-body-sm transition-colors ${
+                  platform === p ? "bg-primary text-on-primary" : "border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+              >
+                {p === "all" ? "전체" : PLATFORM_META[p].label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
-        {KINDS.map((k) => (
-          <button
-            key={k}
-            onClick={() => setKind(k)}
-            className={`shrink-0 rounded-full px-3 py-1.5 font-body-sm text-body-sm transition-colors ${
-              kind === k ? "bg-primary text-on-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
-            }`}
-          >
-            {k === "all" ? "전체 유형" : k === "ad" ? "광고" : "게시물"}
-          </button>
-        ))}
+        <Divider />
+        {/* 유형 */}
+        <div className="flex flex-col gap-1">
+          <GroupLabel>유형</GroupLabel>
+          <div className="flex gap-2">
+            {KINDS.map((k) => (
+              <button
+                key={k}
+                onClick={() => setKind(k)}
+                className={`shrink-0 rounded-full px-3 py-1 font-body-sm text-body-sm transition-colors ${
+                  kind === k ? "bg-primary text-on-primary" : "border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+              >
+                {k === "all" ? "전체" : k === "ad" ? "광고" : "게시물"}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
-        <div className="flex shrink-0 items-center gap-1.5">
+        <Divider />
+        {/* 브랜드 */}
+        <div className="flex flex-col gap-1">
           <GroupLabel>브랜드</GroupLabel>
           <select
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
-            className="cursor-pointer rounded-full bg-surface-container px-3 py-1.5 font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary"
+            className="cursor-pointer border-none bg-transparent p-0 font-body-sm text-body-sm font-medium focus:outline-none focus:ring-0"
           >
             <option value="all">전체 브랜드</option>
             {brands.map((b) => (
@@ -113,38 +130,46 @@ export default function Feed() {
           </select>
         </div>
 
-        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
-        <div className="flex shrink-0 items-center gap-1.5">
+        <Divider />
+        {/* 포맷 */}
+        <div className="flex flex-col gap-1">
           <GroupLabel>포맷</GroupLabel>
-          {FORMATS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => toggleFormat(f.key)}
-              title={f.label}
-              aria-pressed={formats.has(f.key)}
-              className={`material-symbols-outlined notranslate rounded-full p-1.5 text-[20px] transition-colors ${
-                formats.has(f.key) ? "bg-primary/12 text-primary" : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-            >
-              {f.icon}
-            </button>
-          ))}
+          <div className="flex items-center gap-2">
+            {FORMATS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => toggleFormat(f.key)}
+                title={f.label}
+                aria-pressed={formats.has(f.key)}
+                className={`material-symbols-outlined notranslate rounded p-1 text-[20px] transition-colors ${
+                  formats.has(f.key) ? "text-primary" : "text-outline hover:text-on-surface-variant"
+                }`}
+              >
+                {f.icon}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
-        <select
-          value={String(period)}
-          onChange={(e) => setPeriod(e.target.value === "all" ? "all" : (Number(e.target.value) as 7 | 30 | 90))}
-          className="shrink-0 cursor-pointer rounded-full bg-surface-container px-3 py-1.5 font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary"
-        >
-          {PERIODS.map((p) => (
-            <option key={String(p.key)} value={String(p.key)}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-
-        <span className="ml-auto shrink-0 pr-2 font-label-muted text-label-muted text-on-surface-variant">{items.length}개</span>
+        {/* 기간 (우측 pill) + 카운트 */}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="shrink-0 font-label-muted text-label-muted text-on-surface-variant">{items.length}개</span>
+          <div className="relative">
+            <span className="material-symbols-outlined notranslate pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-outline">calendar_today</span>
+            <select
+              value={String(period)}
+              onChange={(e) => setPeriod(e.target.value === "all" ? "all" : (Number(e.target.value) as 7 | 30 | 90))}
+              className="cursor-pointer appearance-none rounded-lg border border-outline-variant bg-surface-container-low py-2 pl-9 pr-8 font-body-sm text-body-sm font-medium hover:bg-surface-container focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {PERIODS.map((p) => (
+                <option key={String(p.key)} value={String(p.key)}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined notranslate pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[18px] text-outline">expand_more</span>
+          </div>
+        </div>
       </Card>
 
       {items.length === 0 ? (
