@@ -15,6 +15,9 @@ The main user-facing goals were:
 - Split Meta, Instagram, X, and TikTok data more clearly.
 - Show all supported platforms in platform summary areas, even if a platform has no current snapshot.
 - Add the second pass analytics layer: brand/platform comparison, priority alerts, campaign clusters, Meta Ads analysis, Watchlist, and data quality states.
+- Add a management-screen manual Apify collection flow where selected brand/platform account combinations enqueue collector jobs.
+- Replace the global palette with a L'Oreal-inspired black, charcoal, white, gray, and gold palette.
+- Fix dark-theme logo legibility by rendering transparent/dark brand logos on a consistent light logo plate.
 
 ## Important files
 
@@ -55,6 +58,18 @@ The main user-facing goals were:
 
 - `apps/web/app/routes/admin-runs.tsx`
   - Added summary/admin stats and updated surface styling.
+  - Added manual collection controls: select all, brand-level selection, platform-level selection, selected-combination preview, per-account max item cap, and submit state.
+  - The route action calls the collector worker `POST /manual-collect` endpoint with `COLLECTOR_URL` and `COLLECTOR_SECRET`.
+
+- `apps/collector/src/worker.ts`
+  - Added `POST /manual-collect`.
+  - Authenticates with `x-celine-collect-secret` against `MANUAL_COLLECT_SECRET`.
+  - Validates selected active accounts and enqueues the same `COLLECT_QUEUE` messages used by scheduled collection.
+  - Supports an optional capped `maxItems` value per queued account.
+
+- `apps/collector/src/seed.ts`
+  - Seed data now includes `meta_ads` account rows for the monitored brands.
+  - Meta Ads collection uses the account `handle` as a Meta Ad Library keyword search, not an Instagram-style `@handle`.
 
 - `apps/web/app/components/ui.tsx`
   - Updated card, chart, media placeholder, and platform chip styling.
@@ -62,11 +77,13 @@ The main user-facing goals were:
 
 - `apps/web/app/components/Sidebar.tsx`, `apps/web/app/components/TopBar.tsx`, `apps/web/app/root.tsx`, `apps/web/app/app.css`
   - Global Stitch-like surface, grid, spacing, and shell polish.
+  - Palette now maps existing token names to L'Oreal-style black/charcoal/white/gray/gold values, so route markup can keep using the same semantic classes.
 
 - `apps/web/app/lib/brand-assets.ts`
   - New shared brand asset registry.
   - Exports `brandLogoFor`, `BrandLogo`, `brandBannerFor`, and `BrandBanner`.
   - Keep this file as `.ts`; it intentionally uses `createElement` instead of JSX so Vite can import it as `brand-assets.ts`.
+  - `BrandLogo` now always renders logos on a light `#F4F4F4` plate with a gold border, so black transparent logos stay visible across dark cards, tables, banners, and trend selectors.
 
 ## Brand assets
 
@@ -108,6 +125,54 @@ Trends uses query params:
 - `platform`: `all`, `instagram`, `twitter`, `tiktok`, or `meta_ads`
 
 When updating trends behavior, preserve query-param selection rather than changing brand tabs back to `/brands/:slug` links.
+
+## Logo visibility pass
+
+The app now uses `BrandLogo` for the Trends dashboard header instead of the previous generic `monitoring` icon. The selected brand logo appears in the 56px header square and reuses the same light plate treatment as smaller logos.
+
+The same shared component is used for:
+
+- Summary brand/platform rows
+- Brands page floating logos over banner imagery
+- Brand detail headers
+- Trends brand selector chips
+- Any fallback text monogram when a logo asset is missing
+
+Do not change logo containers back to `bg-surface-container-lowest`; that makes black transparent logos disappear on the L'Oreal dark palette. If a future design needs a different treatment, keep a light logo plate or add a per-logo inverse asset.
+
+## Manual Apify collection
+
+The manual collection flow is intentionally web → collector → queue, not web → Apify:
+
+1. Admin user selects brand/platform account combinations on `/admin-runs`.
+2. The web route action sends selected `accountIds` to `COLLECTOR_URL/manual-collect`.
+3. The collector validates `MANUAL_COLLECT_SECRET`, loads active accounts, and enqueues queue messages.
+4. The existing queue consumer runs `collectAccount()`, which handles Apify, normalization, ingestion, and `collection_runs` updates.
+
+Required runtime settings:
+
+- Web Worker: `COLLECTOR_URL`, `COLLECTOR_SECRET`
+- Collector Worker: `MANUAL_COLLECT_SECRET`, `APIFY_TOKEN`, Hyperdrive, queue bindings
+
+`COLLECTOR_SECRET` and `MANUAL_COLLECT_SECRET` must be the same value. If those values are missing, the admin page will show a configuration error instead of silently failing.
+
+If the `/admin/runs` "Meta" quick-select button shows `0` or is disabled, the production `brand_accounts` table is missing active `meta_ads` rows. Re-run the collector seed or upsert equivalent `brand_accounts` rows. The quick-select UI can only enqueue existing active accounts because `/manual-collect` validates `accountIds` before queueing.
+
+Root cause found on 2026-07-04: `ACTIVE_PLATFORMS` included `meta_ads`, so the quick-select button rendered, but the collector seed only had Instagram, X, and TikTok rows for the monitored brands. That made the Meta quick-select target set empty. The seed now creates `meta_ads` rows using Meta Ad Library keyword handles such as `Anua`, `VT Cosmetics`, `medicube`, `manyo`, and `AESTURA`.
+
+## Palette
+
+The active visual palette is:
+
+- Primary Black: `#000000`
+- Rich Charcoal: `#1C1C1C`
+- White: `#FFFFFF`
+- Light Gray: `#F4F4F4`
+- Medium Gray: `#B8B8B8`
+- Luxury Gold: `#C8A45D`
+- Champagne Gold: `#D8C28A`
+
+The mapping lives in `apps/web/tailwind.config.ts`. Direct global CSS colors live in `apps/web/app/app.css`; keep those in the same grayscale/gold family.
 
 ## Analytics layer
 
@@ -167,6 +232,23 @@ After the second feature pass, the same checks were run again and passed:
 ```bash
 npm run typecheck -w @celine/web
 npm run build -w @celine/web
+git diff --check
+```
+
+After the final logo visibility pass, the same checks were run again and passed:
+
+```bash
+npm run typecheck -w @celine/web
+npm run build -w @celine/web
+git diff --check
+```
+
+After adding Meta seed accounts for manual collection, these checks were run again and passed:
+
+```bash
+npm run typecheck -w @celine/web
+npm run build -w @celine/web
+npm test -w @celine/collector
 git diff --check
 ```
 

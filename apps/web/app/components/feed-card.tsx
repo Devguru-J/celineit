@@ -8,7 +8,7 @@ function OverlayBadges({ item: i }: { item: FeedItem }) {
   const m = PLATFORM_META[i.platform];
   return (
     <div className="absolute left-3 top-3 z-10 flex gap-2">
-      <span className="flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 font-label-muted text-[10px] font-bold text-black backdrop-blur-sm">
+      <span className="flex items-center gap-1 rounded-full bg-[#F4F4F4]/90 px-2 py-0.5 font-label-muted text-[10px] font-bold text-black backdrop-blur-sm">
         <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />
         {m.short}
       </span>

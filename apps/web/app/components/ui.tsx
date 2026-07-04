@@ -4,7 +4,7 @@ import { PLATFORM_META, type Platform } from "~/mock/data";
 export function PlatformChip({ platform, withIcon = false }: { platform: Platform; withIcon?: boolean }) {
   const m = PLATFORM_META[platform];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded border border-outline-variant/70 bg-surface-container-low px-2 py-0.5 font-label-muted text-[10px] font-bold uppercase text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+    <span className="inline-flex items-center gap-1.5 rounded border border-outline-variant/80 bg-surface-container-low px-2 py-0.5 font-label-muted text-[10px] font-bold uppercase text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
       {withIcon && <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />}
       <span>{m.short}</span>
     </span>
@@ -113,7 +113,7 @@ export function MediaVideo({
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded border border-outline-variant/80 bg-surface-container-lowest shadow-[0_12px_32px_rgba(53,37,205,0.05),inset_0_1px_0_rgba(255,255,255,0.86)] ${className}`}
+      className={`rounded border border-outline-variant/90 bg-surface shadow-[0_16px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)] ${className}`}
     >
       {children}
     </div>
@@ -133,7 +133,7 @@ export function CardHeader({ title, action }: { title: string; action?: React.Re
 export function LineChart({
   data,
   height = 200,
-  stroke = "#3525cd",
+  stroke = "#C8A45D",
   fill = true,
 }: {
   data: { value: number }[];
@@ -176,9 +176,9 @@ export function LineChart({
 export function KpiDelta({ dir, text }: { dir: "up" | "down" | "flat"; text: string }) {
   const cfg =
     dir === "up"
-      ? { icon: "trending_up", cls: "text-emerald-600 bg-emerald-50" }
+      ? { icon: "trending_up", cls: "text-[#D8C28A] bg-[#D8C28A]/15" }
       : dir === "down"
-        ? { icon: "trending_down", cls: "text-rose-600 bg-rose-50" }
+        ? { icon: "trending_down", cls: "text-error bg-error-container/60" }
         : { icon: "trending_flat", cls: "text-on-surface-variant bg-surface-container" };
   return (
     <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-label-caps text-[10px] ${cfg.cls}`}>
@@ -192,7 +192,7 @@ export function KpiDelta({ dir, text }: { dir: "up" | "down" | "flat"; text: str
 export function BarChart({
   data,
   height = 140,
-  color = "#3525cd",
+  color = "#C8A45D",
 }: {
   data: { value: number }[];
   height?: number;

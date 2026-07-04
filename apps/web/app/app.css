@@ -9,6 +9,7 @@ body {
   -webkit-font-smoothing: antialiased;
   word-break: keep-all;
   font-variant-numeric: tabular-nums;
+  background: #111111;
 }
 
 body::before {
@@ -18,8 +19,9 @@ body::before {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(circle at 12% 0%, rgba(79, 70, 229, 0.08), transparent 30rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(251, 248, 255, 0));
+    radial-gradient(circle at 12% 0%, rgba(216, 194, 138, 0.14), transparent 30rem),
+    radial-gradient(circle at 88% 8%, rgba(255, 255, 255, 0.05), transparent 28rem),
+    linear-gradient(180deg, rgba(28, 28, 28, 0.92), rgba(17, 17, 17, 0.98));
 }
 
 .material-symbols-outlined {
@@ -43,9 +45,10 @@ body::before {
 }
 
 .surface-grid {
+  background-color: #181818;
   background-image:
-    linear-gradient(rgba(199, 196, 216, 0.24) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(199, 196, 216, 0.24) 1px, transparent 1px);
+    linear-gradient(rgba(216, 194, 138, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(216, 194, 138, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -57,11 +60,11 @@ body::before {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e3e1ec;
+  background: #3a3a3a;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c7c4d8;
+  background: #c8a45d;
 }
 
 /* Timeline connector used on the Summary page */
@@ -72,6 +75,107 @@ body::before {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: #e3e1ec;
+  background: #3a3a3a;
   z-index: 0;
+}
+
+/* Dark L'Oreal palette guardrails.
+   These intentionally mirror Tailwind semantic tokens so dev-server cache or
+   route-specific critical CSS cannot leave dark text on dark surfaces. */
+.bg-background {
+  background-color: #111111;
+}
+
+.bg-surface,
+.bg-surface-bright {
+  background-color: #181818;
+}
+
+.bg-surface-container-low,
+[class~="bg-surface-container-low/92"] {
+  background-color: #1c1c1c;
+}
+
+.bg-surface-container,
+.bg-secondary-container {
+  background-color: #242424;
+}
+
+.bg-surface-container-high {
+  background-color: #2a2a2a;
+}
+
+.bg-surface-container-highest,
+.bg-surface-variant {
+  background-color: #333333;
+}
+
+.bg-surface-container-lowest,
+[class~="bg-surface-container-lowest/70"],
+[class~="bg-surface-container-lowest/80"],
+[class~="bg-surface-container-lowest/95"] {
+  background-color: #161616;
+}
+
+.bg-surface-dim,
+[class~="hover:bg-surface-dim/30"]:hover {
+  background-color: #0d0d0d;
+}
+
+.bg-primary {
+  background-color: #c8a45d;
+}
+
+.bg-primary-container,
+[class~="bg-primary-container/5"],
+[class~="bg-primary-container/10"],
+[class~="bg-primary-container/15"],
+[class~="bg-primary-container/20"] {
+  background-color: rgba(216, 194, 138, 0.15);
+}
+
+.text-on-surface,
+.text-on-background {
+  color: #ffffff;
+}
+
+.text-on-surface-variant,
+.text-outline {
+  color: #b8b8b8;
+}
+
+.text-outline-variant {
+  color: #8a8a8a;
+}
+
+.text-primary {
+  color: #c8a45d;
+}
+
+.text-on-primary {
+  color: #000000;
+}
+
+.border-outline-variant,
+[class~="border-outline-variant/70"],
+[class~="border-outline-variant/80"],
+[class~="border-outline-variant/90"] {
+  border-color: #3a3a3a;
+}
+
+.border-outline {
+  border-color: #8a8a8a;
+}
+
+.border-primary,
+[class~="border-primary/40"],
+[class~="border-primary/50"],
+[class~="border-primary/70"] {
+  border-color: #c8a45d;
+}
+
+input,
+select,
+textarea {
+  color: #ffffff;
 }

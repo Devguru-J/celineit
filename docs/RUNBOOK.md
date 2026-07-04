@@ -78,12 +78,16 @@ npx wrangler queues create celine-collect-dlq
 
 # 3) 시크릿 주입
 npx wrangler secret put APIFY_TOKEN
+npx wrangler secret put MANUAL_COLLECT_SECRET
 
 # 4) 배포
 npm run deploy -w @celine/collector
 ```
 - Cron 주기는 `wrangler.toml` `[triggers].crons` 에서 조정.
 - 격일 플랫폼은 `brand_accounts.collect_cadence='every_2d'` (현재 worker는 짝수일 수집; 추후 정교화).
+- 웹 관리 화면에서 직접 수집을 시작하려면 웹 Worker에도 `COLLECTOR_URL` 과
+  `COLLECTOR_SECRET` 을 설정한다. `COLLECTOR_SECRET` 값은 collector의
+  `MANUAL_COLLECT_SECRET` 과 동일해야 한다.
 
 ---
 

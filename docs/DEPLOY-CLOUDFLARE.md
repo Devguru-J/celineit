@@ -78,10 +78,25 @@ npm run dev -w @celine/web
 | 이름 | 어디서 | 비고 |
 |---|---|---|
 | DB 연결 | **Hyperdrive 바인딩** | 웹은 `DATABASE_URL` 대신 `env.HYPERDRIVE.connectionString` 사용 |
+| `COLLECTOR_URL` | 웹 Worker var | 관리 화면의 수동 수집 버튼이 호출할 collector worker URL |
+| `COLLECTOR_SECRET` | 웹 Worker secret | collector의 `MANUAL_COLLECT_SECRET` 과 같은 값 |
 | `SUPABASE_URL/SERVICE_KEY/BUCKET` | (웹 불필요) | collector 전용. 웹 배포엔 안 씀 |
 
-웹 앱이 필요로 하는 런타임 값은 **DB 하나뿐**이고, 그건 Hyperdrive 로 처리된다.
-→ Workers 에 별도 `wrangler secret put` 이 필요 없다.
+웹 앱의 대시보드 조회는 Hyperdrive 만 있으면 된다. 다만 **관리 → 수집 실행 현황**에서
+수동 Apify 수집을 시작하려면 collector 연동 값도 필요하다:
+
+```bash
+cd apps/web
+npx wrangler secret put COLLECTOR_SECRET
+# COLLECTOR_URL 은 비밀이 아니므로 Cloudflare dashboard Variables 또는 wrangler.jsonc vars 로 설정
+```
+
+collector 쪽에는 같은 값을 별도 secret 으로 넣는다:
+
+```bash
+cd apps/collector
+npx wrangler secret put MANUAL_COLLECT_SECRET
+```
 
 ---
 
@@ -91,5 +106,6 @@ npm run dev -w @celine/web
 - [ ] Supabase 는 **Direct connection(5432)** 사용 (Hyperdrive 가 앞단 풀링)
 - [ ] 모노레포: Root directory 는 `/`, 빌드는 `-w @celine/web`
 - [ ] `db.server.ts` 에서 `dotenv`/`process.env` 제거됨 (Workers 엔 없음)
+- [ ] 수동 수집 사용 시 웹 `COLLECTOR_URL/COLLECTOR_SECRET` 과 collector `MANUAL_COLLECT_SECRET` 설정
 - [ ] 배포 후 `/img` 프록시(이미지/영상 Range)와 게시물 상세를 실제로 열어 확인
 - [ ] Worker 번들 크기: 무료 플랜 gzip 후 1MB 제한 (현재 여유 있음)

@@ -14,7 +14,7 @@ import { TopBar } from "./components/TopBar";
 export const links: LinksFunction = () => [
   {
     rel: "icon",
-    href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%233525cd'/%3E%3Cpath d='M9 21h14v3H9zM9 15h10v3H9zM9 9h14v3H9z' fill='white'/%3E%3C/svg%3E",
+    href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23000000'/%3E%3Cpath d='M9 21h14v3H9zM9 15h10v3H9zM9 9h14v3H9z' fill='%23C8A45D'/%3E%3C/svg%3E",
   },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

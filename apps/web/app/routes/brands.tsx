@@ -42,7 +42,7 @@ export default function Brands() {
           <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Brand registry</span>
           <p className="mt-1 font-body-md text-body-md text-on-surface-variant">모니터링 중인 브랜드 {brands.length}개</p>
         </div>
-        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-body-sm text-body-sm font-semibold text-on-primary shadow-[0_10px_20px_rgba(53,37,205,0.16)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 sm:w-auto">
+        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-body-sm text-body-sm font-semibold text-on-primary shadow-[0_10px_20px_rgba(28,28,28,0.18)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 sm:w-auto">
           <span className="material-symbols-outlined notranslate text-[18px]">add</span>
           브랜드 추가
         </button>
@@ -77,7 +77,7 @@ export default function Brands() {
             <button
               type="button"
               onClick={() => toggleWatch(b.slug)}
-              className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded border border-white/70 bg-white/90 shadow-[0_10px_24px_rgba(20,18,48,0.18)] backdrop-blur transition-colors hover:border-primary/50 ${
+              className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded border border-[#D8C28A]/60 bg-[#F4F4F4]/92 shadow-[0_10px_24px_rgba(0,0,0,0.28)] backdrop-blur transition-colors hover:border-primary/70 ${
                 watchlist.includes(b.slug) ? "text-primary" : "text-on-surface-variant"
               }`}
               aria-label={`${b.name} watchlist`}
@@ -92,7 +92,7 @@ export default function Brands() {
               <BrandLogo
                 slug={b.slug}
                 name={b.name}
-                className="absolute bottom-3 left-4 z-10 h-14 w-14 border-white/80 bg-white/90 shadow-[0_16px_32px_rgba(20,18,48,0.18)] backdrop-blur sm:left-5"
+                className="absolute bottom-3 left-4 z-10 h-14 w-14 border-[#D8C28A]/70 bg-[#F4F4F4]/92 shadow-[0_16px_32px_rgba(0,0,0,0.32)] backdrop-blur sm:left-5"
               />
             </div>
             <div className="p-4 sm:p-container-padding">

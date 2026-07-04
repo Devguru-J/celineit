@@ -31,8 +31,8 @@ export async function loader() {
 // 이벤트 타입별 표시.
 const CHANGE_META: Record<RecentChangeKind, { icon: string; label: string; cls: string }> = {
   new_ad: { icon: "campaign", label: "신규 광고 감지", cls: "text-primary bg-primary-container/20" },
-  ad_inactive: { icon: "block", label: "광고 비활성화", cls: "text-rose-600 bg-rose-50" },
-  follower_spike: { icon: "trending_up", label: "팔로워 급증", cls: "text-emerald-600 bg-emerald-50" },
+  ad_inactive: { icon: "block", label: "광고 비활성화", cls: "text-error bg-error-container/60" },
+  follower_spike: { icon: "trending_up", label: "팔로워 급증", cls: "text-[#D8C28A] bg-[#D8C28A]/15" },
   new_post: { icon: "post_add", label: "신규 게시물", cls: "text-primary bg-primary-container/20" },
 };
 
@@ -75,7 +75,7 @@ export default function Summary() {
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="surface-grid flex min-h-[140px] flex-col justify-between rounded border border-outline-variant/80 bg-surface-container-lowest p-4 shadow-[0_12px_32px_rgba(53,37,205,0.05),inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:-translate-y-0.5 hover:border-primary/50 sm:p-container-padding"
+            className="surface-grid flex min-h-[140px] flex-col justify-between rounded border border-outline-variant/80 bg-surface-container-lowest p-4 shadow-[0_16px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:-translate-y-0.5 hover:border-primary/50 sm:p-container-padding"
           >
             <div className="flex justify-between items-start">
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{k.label}</span>
@@ -153,7 +153,7 @@ export default function Summary() {
             {alerts.length === 0 && <p className="font-body-sm text-body-sm text-on-surface-variant">현재 우선 확인할 알림이 없습니다.</p>}
             {alerts.map((alert) => (
               <Link key={alert.id} to={alert.linkTo} className="flex gap-3 rounded border border-outline-variant/70 bg-surface-container-lowest p-3 transition-colors hover:border-primary/40">
-                <span className={`material-symbols-outlined notranslate text-[20px] ${alert.severity === "high" ? "text-rose-600" : alert.severity === "medium" ? "text-primary" : "text-on-surface-variant"}`}>
+                <span className={`material-symbols-outlined notranslate text-[20px] ${alert.severity === "high" ? "text-error" : alert.severity === "medium" ? "text-primary" : "text-on-surface-variant"}`}>
                   {alert.icon}
                 </span>
                 <span className="min-w-0">
@@ -175,10 +175,10 @@ export default function Summary() {
                 <PlatformChip platform={q.platform} withIcon />
                 <span className={`rounded px-2 py-1 font-label-caps text-[10px] ${
                   q.status === "fresh"
-                    ? "bg-emerald-50 text-emerald-700"
+                    ? "bg-[#D8C28A]/15 text-[#D8C28A]"
                     : q.status === "stale"
-                      ? "bg-amber-50 text-amber-700"
-                      : "bg-rose-50 text-rose-700"
+                      ? "bg-[#F4F4F4] text-[#5F5F5F]"
+                      : "bg-error-container/60 text-error"
                 }`}>
                   {q.status}
                 </span>
@@ -332,7 +332,7 @@ export default function Summary() {
                   <td className="px-container-padding py-4 text-right tabular-nums font-body-md">{b.postsCount}</td>
                   <td className="px-container-padding py-4 text-right tabular-nums font-body-md">{b.adsCount}</td>
                   <td className="px-container-padding py-4 text-center">
-                    <span className={`px-2 py-1 rounded font-label-caps text-[10px] ${b.postsCount > 0 ? "bg-emerald-50 text-emerald-700" : "bg-surface-variant text-on-surface-variant"}`}>
+                    <span className={`px-2 py-1 rounded font-label-caps text-[10px] ${b.postsCount > 0 ? "bg-[#D8C28A]/15 text-[#D8C28A]" : "bg-surface-variant text-on-surface-variant"}`}>
                       {b.postsCount > 0 ? "추적 중" : "대기"}
                     </span>
                   </td>

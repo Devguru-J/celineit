@@ -37,9 +37,11 @@ export default function Trends() {
     <div className="space-y-card-gap p-4 sm:p-container-padding">
       <Card className="overflow-hidden">
         <div className="surface-grid flex flex-wrap items-center gap-4 border-b border-outline-variant/80 bg-surface-container-low p-4 sm:gap-6 sm:p-container-padding">
-          <div className="flex h-14 w-14 items-center justify-center rounded bg-primary text-on-primary shadow-[0_12px_24px_rgba(53,37,205,0.18)]">
-            <span className="material-symbols-outlined notranslate text-[28px]">monitoring</span>
-          </div>
+          <BrandLogo
+            slug={account.slug}
+            name={account.brand}
+            className="h-14 w-14 shrink-0 shadow-[0_12px_24px_rgba(0,0,0,0.28)]"
+          />
           <div className="min-w-0 flex-1">
             <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Trends dashboard</span>
             <div className="flex items-center gap-2">
@@ -205,7 +207,7 @@ export default function Trends() {
           </div>
           {hasFollowers ? (
             <>
-              <LineChart data={visibleFollowerSeries} stroke="#3525cd" />
+              <LineChart data={visibleFollowerSeries} stroke="#C8A45D" />
               <div className="mt-3 flex justify-between font-label-muted text-[11px] text-on-surface-variant">
                 <span>{visibleFollowerSeries[0]?.date ?? ""}</span>
                 <span>{visibleFollowerSeries.at(-1)?.date ?? ""}</span>

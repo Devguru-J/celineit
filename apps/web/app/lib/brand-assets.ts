@@ -26,6 +26,9 @@ const BANNERS: { keys: string[]; src: string }[] = [
   { keys: ["cezanne", "セザンヌ"], src: "/brand-banners/cezanne.jpg" },
 ];
 
+const LOGO_PLATE_CLASS =
+  "flex items-center justify-center rounded border border-[#D8C28A]/65 bg-[#F4F4F4] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]";
+
 function normalize(v: string | null | undefined) {
   return (v ?? "")
     .toLowerCase()
@@ -60,7 +63,7 @@ export function BrandLogo({
     return createElement(
       "span",
       {
-        className: `flex items-center justify-center rounded border border-outline-variant bg-surface-container-lowest font-headline-sm font-bold text-primary ${className}`,
+        className: `${LOGO_PLATE_CLASS} font-headline-sm font-bold text-[#1C1C1C] ${className}`,
       },
       (name ?? slug ?? "B").replace(/[^A-Za-z가-힣ぁ-んァ-ン一-龥]/g, "").charAt(0) || "B",
     );
@@ -69,12 +72,12 @@ export function BrandLogo({
   return createElement(
     "span",
     {
-      className: `flex items-center justify-center rounded border border-outline-variant bg-surface-container-lowest p-1 ${className}`,
+      className: `${LOGO_PLATE_CLASS} p-1 ${className}`,
     },
     createElement("img", {
       src,
       alt: `${name ?? slug ?? "Brand"} logo`,
-      className: "h-full w-full object-contain",
+      className: "h-full w-full object-contain mix-blend-normal",
       loading: "lazy",
     }),
   );

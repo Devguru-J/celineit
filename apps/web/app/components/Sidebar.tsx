@@ -14,15 +14,15 @@ export const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 z-50 hidden h-full w-[248px] flex-col border-r border-outline-variant/80 bg-surface-container-low/92 px-stack-sm py-container-padding shadow-[8px_0_32px_rgba(53,37,205,0.04)] backdrop-blur lg:flex">
+    <aside className="fixed left-0 top-0 z-50 hidden h-full w-[248px] flex-col border-r border-[#2C2C2C] bg-[#1C1C1C] px-stack-sm py-container-padding shadow-[8px_0_32px_rgba(0,0,0,0.16)] lg:flex">
       {/* Brand header */}
       <div className="mb-8 flex items-center gap-3 px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded bg-primary text-on-primary shadow-[0_10px_20px_rgba(53,37,205,0.18)]">
+        <div className="flex h-9 w-9 items-center justify-center rounded border border-[#D8C28A]/50 bg-black text-[#C8A45D] shadow-[0_10px_20px_rgba(0,0,0,0.24)]">
           <span className="material-symbols-outlined notranslate text-[20px]">insights</span>
         </div>
         <div>
-          <h1 className="font-headline-sm text-headline-sm font-bold text-primary">Celine</h1>
-          <p className="font-body-md text-[10px] uppercase tracking-widest text-on-surface-variant opacity-70">
+          <h1 className="font-headline-sm text-headline-sm font-bold text-white">Celine</h1>
+          <p className="font-body-md text-[10px] uppercase tracking-widest text-[#D8C28A]/75">
             Intelligence Platform
           </p>
         </div>
@@ -37,10 +37,10 @@ export function Sidebar() {
             end={item.end}
             className={({ isActive }) =>
               [
-                "flex items-center gap-3 px-4 py-2.5 rounded transition-colors active:scale-[0.98]",
+                "flex items-center gap-3 px-4 py-2.5 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D8C28A]/70 active:scale-[0.98]",
                 isActive
-                  ? "bg-primary-container/10 font-semibold text-primary shadow-[inset_3px_0_0_rgba(53,37,205,0.65)]"
-                  : "text-on-surface-variant hover:bg-surface-container-high",
+                  ? "bg-[#C8A45D] font-semibold text-black shadow-[inset_3px_0_0_rgba(255,255,255,0.44)]"
+                  : "text-[#F4F4F4] hover:bg-white/10 hover:text-white",
               ].join(" ")
             }
           >
@@ -51,16 +51,16 @@ export function Sidebar() {
       </nav>
 
       {/* Profile */}
-      <div className="mt-auto border-t border-outline-variant/80 px-2 pt-4">
-        <div className="flex cursor-pointer items-center gap-3 rounded bg-surface-container-lowest/70 p-2 transition-colors hover:bg-surface-container">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-secondary-container text-body-sm font-semibold text-on-secondary-container">
+      <div className="mt-auto border-t border-white/10 px-2 pt-4">
+        <div className="flex cursor-pointer items-center gap-3 rounded border border-white/10 bg-black/28 p-2 transition-colors hover:bg-black/44">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-[#D8C28A] text-body-sm font-semibold text-black">
             CI
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="font-body-md text-body-md font-semibold truncate">Celine Intelligence</p>
-            <p className="font-label-muted text-label-muted text-on-surface-variant truncate">내부 전용 툴</p>
+            <p className="font-body-md text-body-md font-semibold truncate text-white">Celine Intelligence</p>
+            <p className="font-label-muted text-label-muted text-[#B8B8B8] truncate">내부 전용 툴</p>
           </div>
-          <span className="material-symbols-outlined notranslate text-[20px] text-on-surface-variant">logout</span>
+          <span className="material-symbols-outlined notranslate text-[20px] text-[#B8B8B8]">logout</span>
         </div>
       </div>
     </aside>
@@ -71,7 +71,7 @@ export function MobileNav() {
   const items = NAV_ITEMS.slice(0, 5);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-outline-variant/80 bg-surface-container-lowest/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-8px_24px_rgba(26,27,34,0.08)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2C2C2C] bg-[#1C1C1C]/96 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] backdrop-blur lg:hidden">
       <div className="grid grid-cols-5 gap-1">
         {items.map((item) => (
           <NavLink
@@ -80,10 +80,10 @@ export function MobileNav() {
             end={item.end}
             className={({ isActive }) =>
               [
-                "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded px-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.98]",
+                "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded px-1 text-[10px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D8C28A]/70 active:scale-[0.98]",
                 isActive
-                  ? "bg-primary-container/10 text-primary"
-                  : "text-on-surface-variant hover:bg-surface-container",
+                  ? "bg-[#C8A45D] text-black"
+                  : "text-[#F4F4F4] hover:bg-white/10 hover:text-white",
               ].join(" ")
             }
           >

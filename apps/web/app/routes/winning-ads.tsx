@@ -58,7 +58,7 @@ export default function WinningAds() {
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="font-metric-md text-metric-md tabular-nums text-primary">{a.daysActive}<span className="text-body-sm text-on-surface-variant font-normal">일</span></div>
-                  <span className={`inline-block mt-1 px-2 py-0.5 rounded font-label-caps text-[10px] ${a.isActive ? "bg-emerald-50 text-emerald-700" : "bg-surface-variant text-on-surface-variant"}`}>
+                  <span className={`inline-block mt-1 px-2 py-0.5 rounded font-label-caps text-[10px] ${a.isActive ? "bg-[#D8C28A]/15 text-[#D8C28A]" : "bg-surface-variant text-on-surface-variant"}`}>
                     {a.isActive ? "활성" : "종료"}
                   </span>
                 </div>

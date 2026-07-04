@@ -344,6 +344,52 @@ export async function getRuns() {
   });
 }
 
+export type CollectableBrand = {
+  id: string;
+  name: string;
+  slug: string;
+  accounts: {
+    id: string;
+    platform: Platform;
+    handle: string;
+    cadence: string;
+  }[];
+};
+
+export async function getCollectableAccounts(): Promise<CollectableBrand[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      brandId: brandsT.id,
+      brand: brandsT.name,
+      slug: brandsT.slug,
+      accountId: brandAccounts.id,
+      platform: brandAccounts.platform,
+      handle: brandAccounts.handle,
+      cadence: brandAccounts.collectCadence,
+    })
+    .from(brandAccounts)
+    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+    .where(eq(brandAccounts.isActive, true))
+    .orderBy(brandsT.name, brandAccounts.platform, brandAccounts.handle);
+
+  const byBrand = new Map<string, CollectableBrand>();
+  for (const r of rows) {
+    const platform = r.platform as Platform;
+    if (!ACTIVE_PLATFORMS.includes(platform)) continue;
+    if (!byBrand.has(r.brandId)) {
+      byBrand.set(r.brandId, { id: r.brandId, name: r.brand, slug: r.slug, accounts: [] });
+    }
+    byBrand.get(r.brandId)!.accounts.push({
+      id: r.accountId,
+      platform,
+      handle: r.handle,
+      cadence: r.cadence,
+    });
+  }
+  return [...byBrand.values()].filter((brand) => brand.accounts.length > 0);
+}
+
 export async function getRunStats() {
   const db = getDb();
   const [today, yesterday] = await Promise.all([

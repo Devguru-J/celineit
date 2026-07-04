@@ -186,7 +186,7 @@ export default function ItemDetail() {
         <Card className="p-4 sm:p-container-padding">
           <h3 className="font-headline-sm text-headline-sm mb-1">지표 변화 추이</h3>
           <p className="font-label-muted text-label-muted text-on-surface-variant mb-4">일별 좋아요 추이</p>
-          <LineChart data={detail.metricsHistory.map((m) => ({ value: m.likes ?? 0 }))} stroke="#3525cd" />
+          <LineChart data={detail.metricsHistory.map((m) => ({ value: m.likes ?? 0 }))} stroke="#C8A45D" />
         </Card>
       ) : (
         <Card className="p-4 font-body-sm text-body-sm text-on-surface-variant sm:p-container-padding">

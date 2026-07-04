@@ -12,7 +12,7 @@ export const PLATFORM_META: Record<
 > = {
   meta_ads: { label: "메타 광고", short: "Meta", icon: "ad_units", dot: "bg-[#1877F2]" },
   instagram: { label: "인스타그램", short: "IG", icon: "photo_camera", dot: "bg-[#E1306C]" },
-  twitter: { label: "트위터 / X", short: "X", icon: "tag", dot: "bg-[#111111]" },
+  twitter: { label: "트위터 / X", short: "X", icon: "tag", dot: "bg-[#F4F4F4]" },
   tiktok: { label: "틱톡", short: "TikTok", icon: "music_note", dot: "bg-[#00BFA5]" },
   tiktok_ads: { label: "틱톡 광고", short: "TikTok Ads", icon: "ad_units", dot: "bg-[#000000]" }, // dormant(EEA 전용)
 };

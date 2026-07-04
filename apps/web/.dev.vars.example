@@ -2,3 +2,7 @@
 # Hyperdrive 바인딩의 로컬 연결 문자열 — 배포 환경에선 Hyperdrive 가 대신 처리하므로 불필요.
 # 형식: CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_<바인딩이름>
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://postgres.hwndnkallorbypiedowm:<PASSWORD>@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+
+# 관리 > 수집 관리 화면에서 collector worker의 수동 수집 API를 호출할 때 사용.
+COLLECTOR_URL="http://localhost:8788"
+COLLECTOR_SECRET="local-manual-collect-secret"

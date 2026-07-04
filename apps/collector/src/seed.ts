@@ -18,6 +18,7 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "Anua アヌア",
     slug: "anua",
     accounts: [
+      { platform: "meta_ads", handle: "Anua" }, // Meta Ad Library keyword search
       { platform: "instagram", handle: "@anua.jp" }, // Anua JAPAN OFFICIAL
       { platform: "tiktok", handle: "@anua.jp" }, // TikTok 오가닉 (핸들 실측 검증 2026-07-04)
       { platform: "twitter", handle: "@anua_official" }, // X 오가닉 (실측 검증)
@@ -27,6 +28,7 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "VT Cosmetics VTコスメティックス",
     slug: "vt-cosmetics",
     accounts: [
+      { platform: "meta_ads", handle: "VT Cosmetics" }, // Meta Ad Library keyword search
       { platform: "instagram", handle: "@vtcosmetics_japan" }, // VT JAPAN OFFICIAL
       { platform: "tiktok", handle: "@vtcosmetics_jp_official" }, // TikTok 오가닉 (실측 검증)
       { platform: "twitter", handle: "@vtcosmetics_jp" }, // X 오가닉 (실측 검증)
@@ -36,6 +38,7 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "medicube メディキューブ",
     slug: "medicube",
     accounts: [
+      { platform: "meta_ads", handle: "medicube" }, // Meta Ad Library keyword search
       { platform: "instagram", handle: "@medicube_officialjapan" }, // メディキューブ 公式
       { platform: "tiktok", handle: "@medicube_japan" }, // TikTok 오가닉 (실측 검증)
       { platform: "twitter", handle: "@medicube_japan" }, // X 오가닉 (실측 검증)
@@ -45,6 +48,7 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "manyo マニョ",
     slug: "manyo",
     accounts: [
+      { platform: "meta_ads", handle: "manyo" }, // Meta Ad Library keyword search
       { platform: "instagram", handle: "@manyo.japan" }, // manyo 日本公式
       { platform: "tiktok", handle: "@manyo.japan" }, // TikTok 오가닉 (실측 검증)
       { platform: "twitter", handle: "@manyojapan" }, // X 오가닉 (실측 검증)
@@ -54,6 +58,7 @@ const SEED_BRANDS: SeedBrand[] = [
     name: "aestura エストラ",
     slug: "aestura",
     accounts: [
+      { platform: "meta_ads", handle: "AESTURA" }, // Meta Ad Library keyword search
       { platform: "instagram", handle: "@aestura_jp" }, // AESTURA JAPAN Official
       // TikTok 제외: 일본 공식 TikTok 계정 없음(2026-07-04 후보 핸들 전부 미존재 확인).
       { platform: "twitter", handle: "@Aestura_jp" }, // X 오가닉 (실측 검증)
