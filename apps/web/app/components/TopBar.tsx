@@ -15,9 +15,9 @@ export function TopBar() {
   const title = TITLES[pathname] ?? "Celine";
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-outline-variant bg-background/95 px-4 backdrop-blur lg:left-[240px] lg:h-16 lg:px-container-padding">
+    <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-outline-variant/80 bg-background/88 px-4 backdrop-blur-xl lg:left-[248px] lg:h-16 lg:px-container-padding">
       <div className="flex min-w-0 items-center gap-3 lg:gap-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary text-on-primary lg:hidden">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary text-on-primary shadow-[0_8px_18px_rgba(53,37,205,0.18)] lg:hidden">
           <span className="material-symbols-outlined notranslate text-[20px]">insights</span>
         </div>
         <h2 className="truncate font-headline-sm text-headline-sm font-bold text-primary">{title}</h2>
@@ -34,16 +34,16 @@ export function TopBar() {
             search
           </span>
           <input
-            className="w-full rounded-full border-none bg-surface-container py-1.5 pl-10 pr-4 text-body-sm transition-all focus:ring-1 focus:ring-primary"
+            className="w-full rounded border border-outline-variant/70 bg-surface-container-lowest py-1.5 pl-10 pr-4 text-body-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition-all focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="브랜드, 광고 검색..."
             type="text"
           />
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
-          <button className="material-symbols-outlined notranslate text-on-surface-variant hover:text-primary duration-200">
+          <button className="material-symbols-outlined notranslate rounded p-1 text-on-surface-variant duration-200 hover:bg-surface-container hover:text-primary active:scale-[0.98]">
             notifications
           </button>
-          <button className="material-symbols-outlined notranslate text-on-surface-variant hover:text-primary duration-200">
+          <button className="material-symbols-outlined notranslate rounded p-1 text-on-surface-variant duration-200 hover:bg-surface-container hover:text-primary active:scale-[0.98]">
             help_outline
           </button>
         </div>

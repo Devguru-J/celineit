@@ -338,9 +338,49 @@ export async function getRuns() {
       status: r.status,
       items: r.itemCount,
       lastRun: r.startedAt ? r.startedAt.toISOString().slice(11, 16) : "—",
+      error: r.error,
       duration: dur,
     };
   });
+}
+
+export async function getRunStats() {
+  const db = getDb();
+  const [today, yesterday] = await Promise.all([
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        ok: sql<number>`count(*) filter (where ${collectionRuns.status} = 'done')::int`,
+        fail: sql<number>`count(*) filter (where ${collectionRuns.status} = 'error')::int`,
+      })
+      .from(collectionRuns)
+      .where(gte(collectionRuns.startedAt, sql`date_trunc('day', now())`)),
+    db
+      .select({
+        total: sql<number>`count(*)::int`,
+        ok: sql<number>`count(*) filter (where ${collectionRuns.status} = 'done')::int`,
+        fail: sql<number>`count(*) filter (where ${collectionRuns.status} = 'error')::int`,
+      })
+      .from(collectionRuns)
+      .where(
+        and(
+          gte(collectionRuns.startedAt, sql`date_trunc('day', now()) - interval '1 day'`),
+          sql`${collectionRuns.startedAt} < date_trunc('day', now())`,
+        ),
+      ),
+  ]);
+  const cur = today[0] ?? { total: 0, ok: 0, fail: 0 };
+  const prev = yesterday[0] ?? { total: 0, ok: 0, fail: 0 };
+  const rate = cur.total ? Math.round((cur.ok / cur.total) * 1000) / 10 : 0;
+  const prevRate = prev.total ? Math.round((prev.ok / prev.total) * 1000) / 10 : 0;
+  return {
+    total: cur.total,
+    totalDelta: cur.total - prev.total,
+    rate,
+    rateDelta: Math.round((rate - prevRate) * 10) / 10,
+    fail: cur.fail,
+    failDelta: cur.fail - prev.fail,
+  };
 }
 
 export type KpiDelta = { dir: "up" | "down" | "flat"; text: string };
@@ -421,9 +461,9 @@ export async function getSummary() {
   };
 }
 
-export async function getTrends(slug?: string) {
+export async function getTrends(slug?: string, selectedPlatform?: Platform | "all") {
   const db = getDb();
-  // 포스트가 가장 많은 instagram 계정 선택 (또는 지정 slug)
+  const platformFilter = selectedPlatform === "all" ? undefined : selectedPlatform;
   const accounts = await db
     .select({
       accountId: brandAccounts.id,
@@ -439,43 +479,195 @@ export async function getTrends(slug?: string) {
     .groupBy(brandAccounts.id, brandsT.name, brandsT.slug, brandAccounts.platform, brandAccounts.handle)
     .orderBy(desc(sql`count(${postsT.id})`));
 
-  const chosen = (slug ? accounts.find((a) => a.slug === slug) : undefined) ?? accounts[0];
-  if (!chosen) return null;
+  const brandMap = new Map<string, { slug: string; brand: string; n: number }>();
+  for (const a of accounts) {
+    const cur = brandMap.get(a.slug);
+    if (cur) cur.n += a.n;
+    else brandMap.set(a.slug, { slug: a.slug, brand: a.brand, n: a.n });
+  }
 
-  const followerRows = await db
-    .select({ date: accountMetricsDaily.date, followers: accountMetricsDaily.followers })
+  const base = (slug ? accounts.find((a) => a.slug === slug) : undefined) ?? accounts[0];
+  if (!base) return null;
+
+  const brandAccountsForTrends = accounts.filter((a) => a.slug === base.slug);
+  const scopedAccounts = brandAccountsForTrends.filter((a) => !platformFilter || a.platform === platformFilter);
+  const selectedAccounts = scopedAccounts.length ? scopedAccounts : brandAccountsForTrends;
+  const allBrandAccountIds = brandAccountsForTrends.map((a) => a.accountId);
+  const accountIds = selectedAccounts.map((a) => a.accountId);
+
+  const selectedLabel =
+    !platformFilter || selectedAccounts.length > 1
+      ? "전체 매체"
+      : selectedAccounts[0].handle;
+
+  const rawFollowerRows = await db
+    .select({
+      accountId: accountMetricsDaily.brandAccountId,
+      date: accountMetricsDaily.date,
+      followers: accountMetricsDaily.followers,
+      engagementRate: accountMetricsDaily.engagementRate30d,
+    })
     .from(accountMetricsDaily)
-    .where(eq(accountMetricsDaily.brandAccountId, chosen.accountId))
+    .where(inArray(accountMetricsDaily.brandAccountId, accountIds))
     .orderBy(accountMetricsDaily.date);
 
-  const topPosts = await db
+  const rawBrandFollowerRows = await db
+    .select({
+      accountId: accountMetricsDaily.brandAccountId,
+      date: accountMetricsDaily.date,
+      followers: accountMetricsDaily.followers,
+    })
+    .from(accountMetricsDaily)
+    .where(inArray(accountMetricsDaily.brandAccountId, allBrandAccountIds))
+    .orderBy(accountMetricsDaily.date);
+
+  const followersByDate = new Map<string, number>();
+  const engagementByDate = new Map<string, { sum: number; n: number }>();
+  for (const r of rawFollowerRows) {
+    if (r.followers != null) followersByDate.set(r.date, (followersByDate.get(r.date) ?? 0) + r.followers);
+    if (r.engagementRate != null) {
+      const cur = engagementByDate.get(r.date) ?? { sum: 0, n: 0 };
+      cur.sum += r.engagementRate;
+      cur.n += 1;
+      engagementByDate.set(r.date, cur);
+    }
+  }
+  const followerRows = [...followersByDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, followers]) => ({
+      date,
+      followers,
+      engagementRate: engagementByDate.has(date) ? engagementByDate.get(date)!.sum / engagementByDate.get(date)!.n : null,
+    }));
+
+  const metricRows = await db
     .select({
       id: postsT.id,
+      platform: brandAccounts.platform,
       caption: postsT.caption,
       format: postsT.format,
+      postedAt: postsT.postedAt,
       likes: sql<number | null>`max(${postMetricsDaily.likes})`,
       comments: sql<number | null>`max(${postMetricsDaily.comments})`,
       views: sql<number | null>`max(${postMetricsDaily.views})`,
     })
     .from(postsT)
+    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
     .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
-    .where(eq(postsT.brandAccountId, chosen.accountId))
-    .groupBy(postsT.id)
-    .orderBy(desc(sql`max(${postMetricsDaily.likes})`))
-    .limit(5);
+    .where(inArray(postsT.brandAccountId, accountIds))
+    .groupBy(postsT.id, brandAccounts.platform)
+    .orderBy(desc(sql`coalesce(max(${postMetricsDaily.likes}), 0) + coalesce(max(${postMetricsDaily.comments}), 0) + coalesce(max(${postMetricsDaily.views}), 0)`));
+
+  const allBrandMetricRows = await db
+    .select({
+      id: postsT.id,
+      platform: brandAccounts.platform,
+      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
+      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
+      views: sql<number | null>`max(${postMetricsDaily.views})`,
+    })
+    .from(postsT)
+    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
+    .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
+    .where(inArray(postsT.brandAccountId, allBrandAccountIds))
+    .groupBy(postsT.id, brandAccounts.platform);
+
+  const topPosts = metricRows.slice(0, 8);
 
   const media = await firstMediaByOwner("post", topPosts.map((p) => p.id));
+  const engagementValues = metricRows
+    .map((p) => (p.likes ?? 0) + (p.comments ?? 0) + (p.views ?? 0))
+    .filter((v) => v > 0)
+    .sort((a, b) => a - b);
+  const medianEngagement =
+    engagementValues.length === 0
+      ? 0
+      : engagementValues.length % 2
+        ? engagementValues[Math.floor(engagementValues.length / 2)]
+        : (engagementValues[engagementValues.length / 2 - 1] + engagementValues[engagementValues.length / 2]) / 2;
+
+  const weeklyRows = await db
+    .select({
+      date: postMetricsDaily.date,
+      likes: postMetricsDaily.likes,
+      comments: postMetricsDaily.comments,
+      views: postMetricsDaily.views,
+    })
+    .from(postMetricsDaily)
+    .innerJoin(postsT, eq(postMetricsDaily.postId, postsT.id))
+    .where(and(inArray(postsT.brandAccountId, accountIds), gte(postMetricsDaily.date, sql`current_date - 28`)))
+    .orderBy(postMetricsDaily.date);
+
+  const weeklyMap = new Map<string, number>();
+  for (const r of weeklyRows) {
+    const d = new Date(`${r.date}T00:00:00Z`);
+    const now = new Date();
+    const diffDays = Math.max(0, Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - d.getTime()) / 86_400_000));
+    const idx = Math.min(3, Math.floor(diffDays / 7));
+    const label = `W${4 - idx}`;
+    weeklyMap.set(label, (weeklyMap.get(label) ?? 0) + (r.likes ?? 0) + (r.comments ?? 0) + (r.views ?? 0));
+  }
+  const weeklyEngagement = ["W1", "W2", "W3", "W4"].map((week) => ({ week, value: weeklyMap.get(week) ?? 0 }));
+
+  const allMetricRows = await db
+    .select({
+      accountId: accountMetricsDaily.brandAccountId,
+      date: accountMetricsDaily.date,
+      engagementRate: accountMetricsDaily.engagementRate30d,
+    })
+    .from(accountMetricsDaily)
+    .orderBy(accountMetricsDaily.brandAccountId, accountMetricsDaily.date);
+  const latestByAccount = new Map<string, number>();
+  for (const r of allMetricRows) {
+    if (r.engagementRate != null) latestByAccount.set(r.accountId, r.engagementRate);
+  }
+  const engagementRate = followerRows.at(-1)?.engagementRate ?? null;
+  const distribution = [...latestByAccount.values()].sort((a, b) => a - b);
+  const percentile =
+    engagementRate != null && distribution.length >= 3
+      ? Math.round((distribution.filter((v) => v <= engagementRate).length / distribution.length) * 100)
+      : null;
+  const band = percentile == null ? "N/A" : percentile >= 90 ? "High" : percentile >= 50 ? "Mid" : "Low";
+
+  const platformBreakdown = brandAccountsForTrends.map((a) => {
+    const latest = rawBrandFollowerRows.filter((r) => r.accountId === a.accountId).at(-1);
+    const posts = allBrandMetricRows.filter((p) => p.platform === a.platform);
+    const engagement = posts.reduce((sum, p) => sum + (p.likes ?? 0) + (p.comments ?? 0) + (p.views ?? 0), 0);
+    return {
+      platform: a.platform as Platform,
+      handle: a.handle,
+      posts: posts.length,
+      followers: latest?.followers ?? null,
+      engagement,
+      active: selectedAccounts.some((s) => s.accountId === a.accountId),
+    };
+  });
 
   return {
     account: {
-      brand: chosen.brand,
-      platform: chosen.platform as Platform,
-      handle: chosen.handle,
+      brand: base.brand,
+      slug: base.slug,
+      platform: (platformFilter ?? "all") as Platform | "all",
+      handle: selectedLabel,
       followers: followerRows.at(-1)?.followers ?? null,
+      engagementRate,
+      benchmark: { percentile, band },
     },
-    allAccounts: accounts.map((a) => ({ slug: a.slug, brand: a.brand, n: a.n })),
-    followerSeries: followerRows.map((r) => ({ value: r.followers ?? 0 })),
-    topPosts: topPosts.map((p) => ({ ...p, imageUrl: media.get(p.id) ?? null })),
+    allAccounts: [...brandMap.values()].sort((a, b) => b.n - a.n),
+    platformBreakdown,
+    followerSeries: followerRows.map((r) => ({ date: r.date, value: r.followers ?? 0 })),
+    weeklyEngagement,
+    topPosts: topPosts.map((p) => {
+      const engagement = (p.likes ?? 0) + (p.comments ?? 0) + (p.views ?? 0);
+      return {
+        ...p,
+        platform: p.platform as Platform,
+        postedAt: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+        engagement,
+        status: medianEngagement > 0 && engagement >= medianEngagement * 3 ? "VIRAL" : "STABLE",
+        imageUrl: media.get(p.id) ?? null,
+      };
+    }),
   };
 }
 
@@ -653,12 +845,21 @@ export async function getSimilarPosts(id: string, limit = 6) {
 export async function getCalendar() {
   const db = getDb();
   const rows = await db
-    .select({ postedAt: postsT.postedAt, platform: brandAccounts.platform })
+    .select({ postedAt: postsT.postedAt, platform: brandAccounts.platform, format: postsT.format })
     .from(postsT)
     .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
     .where(sql`${postsT.postedAt} is not null`);
 
   const byDate = new Map<string, { count: number; platforms: Set<Platform> }>();
+  const byPlatform = new Map<Platform, number>();
+  const byFormat = new Map<string, number>();
+  const byHour = new Map<number, number>();
+  const latest = rows.reduce<Date | null>((max, r) => {
+    if (!r.postedAt) return max;
+    return !max || r.postedAt > max ? r.postedAt : max;
+  }, null);
+  const monthKey = latest ? latest.toISOString().slice(0, 7) : new Date().toISOString().slice(0, 7);
+  let totalMTD = 0;
   for (const r of rows) {
     if (!r.postedAt) continue;
     const key = r.postedAt.toISOString().slice(0, 10);
@@ -666,10 +867,51 @@ export async function getCalendar() {
     const e = byDate.get(key)!;
     e.count++;
     e.platforms.add(r.platform as Platform);
+    byPlatform.set(r.platform as Platform, (byPlatform.get(r.platform as Platform) ?? 0) + 1);
+    byFormat.set(r.format ?? "unknown", (byFormat.get(r.format ?? "unknown") ?? 0) + 1);
+    byHour.set(r.postedAt.getHours(), (byHour.get(r.postedAt.getHours()) ?? 0) + 1);
+    if (key.startsWith(monthKey)) totalMTD++;
   }
-  return [...byDate.entries()]
+  const days = [...byDate.entries()]
     .map(([date, v]) => ({ date, count: v.count, platforms: [...v.platforms] }))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
+  const totalPosts = rows.length;
+  const formatMix = [...byFormat.entries()]
+    .map(([format, count]) => ({ format, count, pct: totalPosts ? Math.round((count / totalPosts) * 100) : 0 }))
+    .sort((a, b) => b.count - a.count);
+  const firstDate = days.length ? new Date(`${days[days.length - 1].date}T00:00:00Z`) : null;
+  const lastDate = days.length ? new Date(`${days[0].date}T00:00:00Z`) : null;
+  const weeks = firstDate && lastDate ? Math.max(1, Math.ceil((lastDate.getTime() - firstDate.getTime() + 86_400_000) / (7 * 86_400_000))) : 1;
+  const weeklyFrequency = [...byPlatform.entries()]
+    .map(([platform, count]) => ({ platform, count, postsPerWeek: Math.round((count / weeks) * 10) / 10 }))
+    .sort((a, b) => b.postsPerWeek - a.postsPerWeek);
+  const activeDaysMTD = days.filter((d) => d.date.startsWith(monthKey)).length;
+  const avgDailyCadence = activeDaysMTD ? Math.round((totalMTD / activeDaysMTD) * 10) / 10 : 0;
+  const peak = [...byHour.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+  const peakHour = peak ? `${String(peak[0]).padStart(2, "0")}:00` : null;
+  const quiet = days.length
+    ? ["일", "월", "화", "수", "목", "금", "토"][
+        [...Array(7).keys()]
+          .map((day) => ({
+            day,
+            count: rows.filter((r) => r.postedAt && r.postedAt.getDay() === day).length,
+          }))
+          .sort((a, b) => a.count - b.count)[0].day
+      ]
+    : null;
+
+  return {
+    days,
+    monthKey,
+    formatMix,
+    weeklyFrequency,
+    kpis: {
+      totalMTD,
+      avgDailyCadence,
+      peakHour,
+      optimizationTip: quiet ? `${quiet}요일 게시 공백이 가장 큽니다. 테스트 슬롯을 하나 배정해 보세요.` : "게시 데이터가 누적되면 최적화 팁이 표시됩니다.",
+    },
+  };
 }
 
 // 팔로워 성장: accountMetricsDaily.followers 를 날짜별 합산(최근 30일) + 플랫폼별 현재 + 집계 델타.

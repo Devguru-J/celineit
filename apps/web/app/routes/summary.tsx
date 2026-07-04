@@ -1,5 +1,7 @@
 import { Link, useLoaderData } from "react-router";
 import { BarChart, Card, CardHeader, KpiDelta, PlatformChip } from "~/components/ui";
+import { BrandLogo } from "~/lib/brand-assets";
+import { ACTIVE_PLATFORMS } from "@celine/shared";
 import { getFollowerGrowth, getRecentChanges, getSummary, type RecentChangeKind } from "~/lib/queries.server";
 
 export function meta() {
@@ -22,23 +24,56 @@ const CHANGE_META: Record<RecentChangeKind, { icon: string; label: string; cls: 
 export default function Summary() {
   const { kpis, recent, brands, followerGrowth } = useLoaderData<typeof loader>();
   const maxPosts = Math.max(1, ...brands.map((b) => b.postsCount));
+  const totalFollowers = followerGrowth.byPlatform.reduce((sum, p) => sum + p.followers, 0);
+  const topFollowerPlatform = followerGrowth.byPlatform[0] ?? null;
+  const hasFollowerTrend = followerGrowth.series.length >= 2;
+  const followersByPlatform = new Map(followerGrowth.byPlatform.map((p) => [p.platform, p.followers]));
+  const followerPlatforms = ACTIVE_PLATFORMS.map((platform) => ({
+    platform,
+    followers: followersByPlatform.get(platform) ?? null,
+  }));
 
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
+      <Card className="surface-grid overflow-hidden">
+        <div className="flex flex-col gap-5 p-4 sm:p-container-padding lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Summary dashboard</span>
+            <h2 className="mt-2 font-metric-lg text-metric-lg text-on-surface">경쟁 브랜드 활동 현황</h2>
+            <p className="mt-2 max-w-[58ch] font-body-md text-body-md text-on-surface-variant">
+              게시물, 광고, 수집 실행 상태를 한 화면에서 확인합니다. 데이터가 없는 감성·광고비 지표는 표시하지 않습니다.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]">
+            {kpis.slice(0, 3).map((k) => (
+              <div key={k.label} className="rounded border border-outline-variant/70 bg-surface-container-lowest/80 p-3">
+                <p className="truncate font-label-muted text-[11px] text-on-surface-variant">{k.label}</p>
+                <p className="mt-1 font-metric-md text-metric-md tabular-nums">{k.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
       {/* KPI 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-card-gap">
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="flex min-h-[132px] flex-col justify-between rounded border border-outline-variant bg-surface-container-lowest p-4 transition-all hover:-translate-y-0.5 hover:border-primary/50 sm:p-container-padding"
+            className="surface-grid flex min-h-[140px] flex-col justify-between rounded border border-outline-variant/80 bg-surface-container-lowest p-4 shadow-[0_12px_32px_rgba(53,37,205,0.05),inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:-translate-y-0.5 hover:border-primary/50 sm:p-container-padding"
           >
             <div className="flex justify-between items-start">
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{k.label}</span>
-              <span className="material-symbols-outlined notranslate text-primary text-[20px]">{k.icon}</span>
+              <span className="material-symbols-outlined notranslate rounded bg-primary-container/10 p-1.5 text-primary text-[20px]">{k.icon}</span>
             </div>
-            <div className="mt-4 flex items-end justify-between gap-2">
-              <h3 className="font-metric-lg text-metric-lg tabular-nums">{k.value}</h3>
-              {k.delta && <KpiDelta dir={k.delta.dir} text={k.delta.text} />}
+            <div>
+              <div className="mt-4 flex items-end justify-between gap-2">
+                <h3 className="font-metric-lg text-metric-lg tabular-nums">{k.value}</h3>
+                {k.delta && <KpiDelta dir={k.delta.dir} text={k.delta.text} />}
+              </div>
+              <div className="mt-4 h-1.5 overflow-hidden rounded bg-surface-variant">
+                <div className="h-full rounded bg-primary" style={{ width: `${metricWidth(k.value)}%` }} />
+              </div>
             </div>
           </div>
         ))}
@@ -102,21 +137,56 @@ export default function Summary() {
                 <KpiDelta dir={followerGrowth.deltaPct >= 0 ? "up" : "down"} text={`${followerGrowth.deltaPct > 0 ? "+" : ""}${followerGrowth.deltaPct}%`} />
               )}
             </div>
-            {followerGrowth.series.length === 0 ? (
-              <p className="font-body-sm text-body-sm text-on-surface-variant">아직 팔로워 시계열이 없습니다.</p>
-            ) : (
-              <>
-                <BarChart data={followerGrowth.series.map((s) => ({ value: s.total }))} height={120} />
-                <div className="mt-4 space-y-2">
-                  {followerGrowth.byPlatform.map((p) => (
-                    <div key={p.platform} className="flex items-center justify-between">
-                      <PlatformChip platform={p.platform} withIcon />
-                      <span className="font-body-sm text-body-sm tabular-nums">{p.followers.toLocaleString()}</span>
-                    </div>
-                  ))}
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded bg-surface-container-low p-3">
+                  <p className="font-label-muted text-[11px] text-on-surface-variant">총 팔로워</p>
+                  <p className="mt-1 font-metric-md text-metric-md tabular-nums">{totalFollowers ? totalFollowers.toLocaleString() : "—"}</p>
                 </div>
-              </>
-            )}
+                <div className="rounded bg-surface-container-low p-3">
+                  <p className="font-label-muted text-[11px] text-on-surface-variant">최대 채널</p>
+                  <p className="mt-1 truncate font-body-md text-body-md font-semibold">
+                    {topFollowerPlatform ? topFollowerPlatform.followers.toLocaleString() : "—"}
+                  </p>
+                </div>
+              </div>
+              {hasFollowerTrend ? (
+                <div className="mt-4">
+                  <BarChart data={followerGrowth.series.map((s) => ({ value: s.total }))} height={112} />
+                  <div className="mt-2 flex justify-between font-label-muted text-[11px] text-on-surface-variant">
+                    <span>{followerGrowth.series[0]?.date}</span>
+                    <span>{followerGrowth.series.at(-1)?.date}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded border border-outline-variant/70 bg-surface-container-lowest p-3">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined notranslate text-[18px] text-primary">info</span>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      현재는 최신 스냅샷 기준입니다. 2일 이상 수집되면 성장률과 추세 차트가 표시됩니다.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="mt-4 space-y-3">
+                {followerPlatforms.map((p) => (
+                  <div key={p.platform}>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <PlatformChip platform={p.platform} withIcon />
+                      <span className={`font-body-sm text-body-sm tabular-nums ${p.followers == null ? "text-on-surface-variant" : ""}`}>
+                        {p.followers != null ? p.followers.toLocaleString() : "—"}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded bg-surface-variant">
+                      <div
+                        className={`h-full rounded ${p.followers == null ? "bg-outline-variant" : "bg-primary"}`}
+                        style={{ width: `${totalFollowers > 0 && p.followers != null ? (p.followers / totalFollowers) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           </Card>
         </div>
       </div>
@@ -141,6 +211,7 @@ export default function Summary() {
                   <td className="px-container-padding py-4">
                     <Link to={`/brands/${b.slug}`} className="flex items-center gap-3 group">
                       <div className="w-2 h-8 rounded-full bg-primary" style={{ opacity: 0.3 + 0.7 * (b.postsCount / maxPosts) }} />
+                      <BrandLogo slug={b.slug} name={b.name} className="h-8 w-8 shrink-0" />
                       <span className="font-body-md text-body-md font-semibold group-hover:text-primary transition-colors">{b.name}</span>
                     </Link>
                   </td>
@@ -159,4 +230,10 @@ export default function Summary() {
       </Card>
     </div>
   );
+}
+
+function metricWidth(value: string) {
+  const n = Number(value.replace(/[^0-9.-]/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return 8;
+  return Math.max(12, Math.min(100, n * 12));
 }

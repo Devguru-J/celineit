@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router";
-import { Card } from "~/components/ui";
+import { Card, PlatformChip } from "~/components/ui";
 import { FeedGrid } from "~/components/feed-card";
-import { PLATFORM_META, type Platform } from "~/mock/data";
+import { BrandLogo } from "~/lib/brand-assets";
+import type { Platform } from "~/mock/data";
 import { getBrandDetail } from "~/lib/queries.server";
 
 export function meta() {
@@ -36,16 +37,12 @@ export default function BrandDetail() {
       {/* 헤더 */}
       <Card className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-container-padding">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-headline-sm font-bold text-primary shadow-sm">
-            {brand.name.replace(/[^A-Za-z가-힣ぁ-んァ-ン一-龥]/g, "").charAt(0) || "B"}
-          </div>
+          <BrandLogo slug={brand.slug} name={brand.name} className="h-14 w-14 shadow-sm" />
           <div>
-            <h2 className="font-headline-md text-headline-md">{brand.name}</h2>
+            <h2 className="font-metric-md text-metric-md">{brand.name}</h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               {platforms.map((p) => (
-                <span key={p} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-surface-container" title={PLATFORM_META[p].label}>
-                  <span className={`w-2 h-2 rounded-full ${PLATFORM_META[p].dot}`} />
-                </span>
+                <PlatformChip key={p} platform={p} withIcon />
               ))}
             </div>
           </div>

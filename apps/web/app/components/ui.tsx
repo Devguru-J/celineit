@@ -4,9 +4,9 @@ import { PLATFORM_META, type Platform } from "~/mock/data";
 export function PlatformChip({ platform, withIcon = false }: { platform: Platform; withIcon?: boolean }) {
   const m = PLATFORM_META[platform];
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-variant font-label-muted text-[10px] uppercase font-bold text-on-surface-variant">
+    <span className="inline-flex items-center gap-1.5 rounded border border-outline-variant/70 bg-surface-container-low px-2 py-0.5 font-label-muted text-[10px] font-bold uppercase text-on-surface-variant shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
       {withIcon && <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />}
-      {m.short}
+      <span>{m.short}</span>
     </span>
   );
 }
@@ -22,20 +22,20 @@ export function MediaPlaceholder({
   format?: "image" | "video" | "carousel";
 }) {
   const gradients = [
-    "from-indigo-200 to-purple-300",
-    "from-rose-200 to-orange-200",
-    "from-emerald-200 to-teal-300",
-    "from-amber-200 to-yellow-100",
-    "from-sky-200 to-indigo-200",
-    "from-stone-300 to-neutral-200",
+    "from-primary-fixed to-primary-fixed-dim",
+    "from-tertiary-fixed to-tertiary-fixed-dim",
+    "from-secondary-container to-primary-fixed",
+    "from-surface-container-high to-surface-variant",
+    "from-primary-fixed-dim to-secondary-fixed-dim",
+    "from-surface-dim to-surface-container-highest",
   ];
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const g = gradients[h % gradients.length];
   const icon = format === "video" ? "play_circle" : format === "carousel" ? "collections" : "image";
   return (
-    <div className={`relative bg-gradient-to-br ${g} overflow-hidden ${className}`}>
-      <span className="material-symbols-outlined notranslate absolute inset-0 m-auto w-fit h-fit text-white/70 text-[28px]">
+    <div className={`surface-grid relative overflow-hidden bg-gradient-to-br ${g} ${className}`}>
+      <span className="material-symbols-outlined notranslate absolute inset-0 m-auto h-fit w-fit text-[28px] text-primary/55">
         {icon}
       </span>
     </div>
@@ -112,7 +112,9 @@ export function MediaVideo({
 // Card wrapper matching the Stitch surface treatment.
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-surface-container-lowest border border-outline-variant rounded ${className}`}>
+    <div
+      className={`rounded border border-outline-variant/80 bg-surface-container-lowest shadow-[0_12px_32px_rgba(53,37,205,0.05),inset_0_1px_0_rgba(255,255,255,0.86)] ${className}`}
+    >
       {children}
     </div>
   );
@@ -120,8 +122,8 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
 
 export function CardHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
-    <div className="px-container-padding py-4 border-b border-outline-variant flex justify-between items-center">
-      <h3 className="font-headline-sm text-headline-sm">{title}</h3>
+    <div className="flex items-center justify-between border-b border-outline-variant/80 px-4 py-4 sm:px-container-padding">
+      <h3 className="font-headline-sm text-headline-sm text-on-surface">{title}</h3>
       {action}
     </div>
   );
@@ -139,6 +141,7 @@ export function LineChart({
   stroke?: string;
   fill?: boolean;
 }) {
+  if (data.length === 0) return null;
   const w = 600;
   const h = height;
   const pad = 8;
@@ -146,7 +149,7 @@ export function LineChart({
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const stepX = (w - pad * 2) / (data.length - 1);
+  const stepX = data.length > 1 ? (w - pad * 2) / (data.length - 1) : 0;
   const pts = data.map((d, i) => {
     const x = pad + i * stepX;
     const y = pad + (1 - (d.value - min) / span) * (h - pad * 2);

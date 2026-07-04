@@ -8,6 +8,18 @@ body {
     "Malgun Gothic", sans-serif;
   -webkit-font-smoothing: antialiased;
   word-break: keep-all;
+  font-variant-numeric: tabular-nums;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(79, 70, 229, 0.08), transparent 30rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(251, 248, 255, 0));
 }
 
 .material-symbols-outlined {
@@ -28,6 +40,13 @@ body {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+.surface-grid {
+  background-image:
+    linear-gradient(rgba(199, 196, 216, 0.24) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(199, 196, 216, 0.24) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 ::-webkit-scrollbar {
