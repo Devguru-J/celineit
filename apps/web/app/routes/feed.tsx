@@ -14,7 +14,7 @@ export async function loader() {
   return { items };
 }
 
-const PLATFORMS: ("all" | Platform)[] = ["all", "meta_ads", "instagram", "twitter", "tiktok"];
+const PLATFORMS: ("all" | Platform)[] = ["all", "meta_ads", "instagram", "twitter", "tiktok", "tiktok_ads"];
 const KINDS: ("all" | "ad" | "post")[] = ["all", "ad", "post"];
 
 export default function Feed() {
