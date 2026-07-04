@@ -1,5 +1,45 @@
 # Codex handoff - 2026-07-04
 
+## Today's work summary
+
+The work on 2026-07-04 covered design parity, analytics UX, brand assets, manual collection, and admin collection-status fixes. The main commits pushed to `origin/main` are:
+
+- `64c9cef` - Dashboard design and brand assets pass.
+- `ee5d94a` - Analytics dashboard feature pass.
+- `a551850` - Dashboard design, manual Apify collection, L'Oreal palette, logo visibility, Meta seed accounts, and main handoff update.
+- `ab7efa1` - Manual collection progress UI in `/admin/runs`.
+- `75bbc91` - Stale `running` collection display handling.
+
+High-level completed work:
+
+- Restyled the app around a L'Oreal-inspired black/charcoal/gray/gold palette.
+- Reworked Summary and Trends to be closer to the Stitch reference dashboard.
+- Preserved existing routes and behavior while improving layout, cards, chips, tables, and dark-mode readability.
+- Added richer Summary analytics: brand/platform comparison, priority alerts, platform data quality, and platform-separated stats.
+- Reworked Trends to use query params for brand/platform selection and to show all platform combinations more explicitly.
+- Added shared brand logo/banner registry and wired brand logos/banners across Summary, Trends, Brands, Brand detail, and tables.
+- Fixed dark transparent logo visibility by rendering all `BrandLogo` instances on a light logo plate.
+- Replaced the Trends header `monitoring` icon with the selected brand logo.
+- Added manual collection controls in `/admin/runs` so users can select brands, platforms, or exact brand/platform account combinations before queueing Apify collection.
+- Added collection progress visibility in `/admin/runs`: queued count, running jobs, latest status, recent runs, manual refresh, and 45-second refresh countdown.
+- Added stale-run protection so old `running` rows older than 1 hour show as `중단됨` instead of live `실행 중`.
+- Updated this handoff throughout so Claude Code or another agent can continue without rediscovering the same context.
+
+## Operational DB changes made today
+
+These were applied directly to the configured Supabase database from the local environment:
+
+- Ran the collector seed after adding `meta_ads` accounts.
+  - Result: seed completed with 5 brands and 19 accounts.
+  - Active account counts after seed: `meta_ads: 5`, `instagram: 5`, `twitter: 5`, `tiktok: 4`.
+  - Meta quick-select targets now exist for `aestura`, `anua`, `manyo`, `medicube`, and `vt-cosmetics`.
+- Closed one stale `collection_runs` row that had been stuck in `running` since `2026-07-03T10:44:21Z`.
+  - Brand/platform: `Anua アヌア` / `instagram`.
+  - Updated to `status = 'error'`, `finished_at = now()`, with error text `stale running run auto-closed after collector did not finish`.
+  - Confirmed current `running` row count was `0` after cleanup.
+
+These DB changes are not represented as migrations because they are data corrections/seed operations, not schema changes.
+
 ## Scope
 
 This change finishes the Stitch-inspired redesign and dashboard data expansion that had been partially started before. Existing routes and behavior are kept, but the dashboard, trends, brand registry, calendar, and admin screens were restyled and given richer summary data.
