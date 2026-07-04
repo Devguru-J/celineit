@@ -19,6 +19,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "anua",
     accounts: [
       { platform: "instagram", handle: "@anua.jp" }, // Anua JAPAN OFFICIAL
+      { platform: "tiktok_ads", handle: "Anua" }, // TikTok Ad Library 광고주 검색어
     ],
   },
   {
@@ -26,6 +27,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "vt-cosmetics",
     accounts: [
       { platform: "instagram", handle: "@vtcosmetics_japan" }, // VT JAPAN OFFICIAL
+      { platform: "tiktok_ads", handle: "VT Cosmetics" },
     ],
   },
   {
@@ -33,6 +35,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "medicube",
     accounts: [
       { platform: "instagram", handle: "@medicube_officialjapan" }, // メディキューブ 公式
+      { platform: "tiktok_ads", handle: "medicube" },
     ],
   },
   {
@@ -40,6 +43,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "manyo",
     accounts: [
       { platform: "instagram", handle: "@manyo.japan" }, // manyo 日本公式
+      { platform: "tiktok_ads", handle: "manyo" },
     ],
   },
   {
@@ -47,6 +51,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "aestura",
     accounts: [
       { platform: "instagram", handle: "@aestura_jp" }, // AESTURA JAPAN Official
+      { platform: "tiktok_ads", handle: "aestura" },
     ],
   },
 ];
