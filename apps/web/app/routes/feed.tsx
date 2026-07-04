@@ -11,25 +11,65 @@ export function meta() {
 
 export async function loader() {
   const items = await getFeed();
-  return { items };
+  const brands = [...new Set(items.map((i) => i.brand))].sort((a, b) => a.localeCompare(b, "ko"));
+  return { items, brands };
 }
 
 const PLATFORMS: ("all" | Platform)[] = ["all", "meta_ads", "instagram", "twitter", "tiktok"];
 const KINDS: ("all" | "ad" | "post")[] = ["all", "ad", "post"];
+const FORMATS: { key: "image" | "video" | "carousel"; icon: string; label: string }[] = [
+  { key: "image", icon: "image", label: "이미지" },
+  { key: "video", icon: "videocam", label: "영상" },
+  { key: "carousel", icon: "view_carousel", label: "캐러셀" },
+];
+const PERIODS: { key: "all" | 7 | 30 | 90; label: string }[] = [
+  { key: "all", label: "전체 기간" },
+  { key: 7, label: "최근 7일" },
+  { key: 30, label: "최근 30일" },
+  { key: 90, label: "최근 90일" },
+];
+
+// caps 라벨 (Stitch 디자인의 그룹 라벨 스타일)
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return <span className="shrink-0 font-label-muted text-label-muted uppercase tracking-wide text-on-surface-variant opacity-70">{children}</span>;
+}
 
 export default function Feed() {
-  const { items: all } = useLoaderData<typeof loader>();
+  const { items: all, brands } = useLoaderData<typeof loader>();
   const [platform, setPlatform] = useState<"all" | Platform>("all");
   const [kind, setKind] = useState<"all" | "ad" | "post">("all");
+  const [brand, setBrand] = useState<"all" | string>("all");
+  const [formats, setFormats] = useState<Set<"image" | "video" | "carousel">>(new Set());
+  const [period, setPeriod] = useState<"all" | 7 | 30 | 90>("all");
+
+  const toggleFormat = (f: "image" | "video" | "carousel") =>
+    setFormats((prev) => {
+      const next = new Set(prev);
+      next.has(f) ? next.delete(f) : next.add(f);
+      return next;
+    });
+
+  const cutoff = useMemo(() => {
+    if (period === "all") return null;
+    return new Date(Date.now() - period * 86_400_000).toISOString().slice(0, 10);
+  }, [period]);
 
   const items = useMemo(
-    () => all.filter((i) => (platform === "all" || i.platform === platform) && (kind === "all" || i.kind === kind)),
-    [all, platform, kind],
+    () =>
+      all.filter(
+        (i) =>
+          (platform === "all" || i.platform === platform) &&
+          (kind === "all" || i.kind === kind) &&
+          (brand === "all" || i.brand === brand) &&
+          (formats.size === 0 || (i.format != null && formats.has(i.format))) &&
+          (cutoff === null || (i.date != null && i.date >= cutoff)),
+      ),
+    [all, platform, kind, brand, formats, cutoff],
   );
 
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
-      <Card className="flex items-center gap-2 overflow-x-auto p-3 sm:flex-wrap">
+      <Card className="flex flex-wrap items-center gap-2 p-3">
         <span className="material-symbols-outlined notranslate ml-1 shrink-0 text-[20px] text-on-surface-variant">filter_list</span>
         {PLATFORMS.map((p) => (
           <button
@@ -42,6 +82,7 @@ export default function Feed() {
             {p === "all" ? "전체 플랫폼" : PLATFORM_META[p].label}
           </button>
         ))}
+
         <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
         {KINDS.map((k) => (
           <button
@@ -54,13 +95,62 @@ export default function Feed() {
             {k === "all" ? "전체 유형" : k === "ad" ? "광고" : "게시물"}
           </button>
         ))}
+
+        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
+        <div className="flex shrink-0 items-center gap-1.5">
+          <GroupLabel>브랜드</GroupLabel>
+          <select
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            className="cursor-pointer rounded-full bg-surface-container px-3 py-1.5 font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="all">전체 브랜드</option>
+            {brands.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
+        <div className="flex shrink-0 items-center gap-1.5">
+          <GroupLabel>포맷</GroupLabel>
+          {FORMATS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => toggleFormat(f.key)}
+              title={f.label}
+              aria-pressed={formats.has(f.key)}
+              className={`material-symbols-outlined notranslate rounded-full p-1.5 text-[20px] transition-colors ${
+                formats.has(f.key) ? "bg-primary/12 text-primary" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              {f.icon}
+            </button>
+          ))}
+        </div>
+
+        <div className="mx-2 h-5 w-[1px] shrink-0 bg-outline-variant" />
+        <select
+          value={String(period)}
+          onChange={(e) => setPeriod(e.target.value === "all" ? "all" : (Number(e.target.value) as 7 | 30 | 90))}
+          className="shrink-0 cursor-pointer rounded-full bg-surface-container px-3 py-1.5 font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          {PERIODS.map((p) => (
+            <option key={String(p.key)} value={String(p.key)}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+
         <span className="ml-auto shrink-0 pr-2 font-label-muted text-label-muted text-on-surface-variant">{items.length}개</span>
       </Card>
 
       {items.length === 0 ? (
         <Card className="p-12 text-center text-on-surface-variant">
           <span className="material-symbols-outlined notranslate text-[40px] opacity-40">inbox</span>
-          <p className="mt-2 font-body-md text-body-md">아직 수집된 데이터가 없습니다. 수집기를 실행해 주세요.</p>
+          <p className="mt-2 font-body-md text-body-md">조건에 맞는 데이터가 없습니다. 필터를 조정하거나 수집기를 실행해 주세요.</p>
         </Card>
       ) : (
         <FeedGrid items={items} />
