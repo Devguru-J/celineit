@@ -342,7 +342,9 @@ export async function getRuns() {
       platform: r.platform as Platform,
       status: isStaleRunning ? "stale" : r.status,
       items: r.itemCount,
+      // UTC 폴백 문자열(SSR/무JS). 클라이언트는 startedAtISO 로 로컬 시각을 표시한다.
       lastRun: r.startedAt ? r.startedAt.toISOString().slice(11, 16) : "—",
+      startedAtISO: r.startedAt ? r.startedAt.toISOString() : null,
       error: r.error,
       duration: dur,
     };

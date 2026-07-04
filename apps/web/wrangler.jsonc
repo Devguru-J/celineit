@@ -17,5 +17,10 @@
       "binding": "HYPERDRIVE",
       "id": "07f80eaefaa6470d9cf0fa956626d603"
     }
+  ],
+  // 수집기(celine-collector) 워커를 Service Binding 으로 연결.
+  // 같은 계정 Worker 간 public workers.dev URL fetch 는 loopback 되므로 반드시 바인딩으로 호출한다.
+  "services": [
+    { "binding": "COLLECTOR", "service": "celine-collector" }
   ]
 }

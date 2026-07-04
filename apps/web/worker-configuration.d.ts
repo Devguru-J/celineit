@@ -2,6 +2,7 @@
 // Hyperdrive 바인딩 외 바인딩을 추가하면 여기에도 반영됨.
 interface Env {
   HYPERDRIVE: Hyperdrive;
+  COLLECTOR?: Fetcher;
   COLLECTOR_URL?: string;
   COLLECTOR_SECRET?: string;
 }

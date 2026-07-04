@@ -319,3 +319,35 @@ git diff --check
 - Some unused older candidate assets may exist locally if not staged, such as old `vt-cosmetics.jpg` or `cezanne.png` under `apps/web/public/brand-banners/`. The committed mapping only uses the files listed above.
 - The Watchlist is intentionally local-only. If shared/team watchlists are needed, add a DB table and server actions instead of reusing localStorage.
 - Campaign clustering is intentionally rule-based. If AI/embedding clustering is added later, keep the existing rule labels as fallback so the dashboard still works when AI calls fail.
+
+## Manual collection: production wiring (2026-07-04, Claude Code follow-up)
+
+The manual "Apify 수집 시작" button now works in production. It was previously broken for three reasons, all fixed:
+
+1. **Web env not loaded / secrets missing.** Prod `celineit` worker had no secrets, so the action returned `COLLECTOR_URL 또는 COLLECTOR_SECRET 설정이 없습니다`.
+2. **Cloudflare Queues required a paid plan.** The original collector routed manual/scheduled collection through `COLLECT_QUEUE`. Queues are a paid feature. This was unnecessary, so **Cloudflare Queues were removed entirely** — the app now runs on the free Workers plan. Only Apify is paid.
+3. **Worker-to-worker loopback + worker time limit.** See the two architecture changes below.
+
+### Architecture changes
+
+- **No Cloudflare Queues.** `apps/collector/wrangler.toml` no longer declares `[[queues.producers]]`/`[[queues.consumers]]`. The `queue()` handler and `COLLECT_QUEUE` binding were removed from `worker.ts`.
+- **Async Apify + completion webhook (not synchronous collect).** Free-plan Workers are killed ~30s after responding, which is shorter than an Apify run. So `scheduled()` and `/manual-collect` now only *start* Apify runs (`startCollect()` → `apify.startRun(actor, input, webhookUrl)`), record `apify_run_id` on the `collection_runs` row, and return `202` immediately. When Apify finishes it calls `POST /webhook?secret=<MANUAL_COLLECT_SECRET>`; `finishCollect()` looks up the run by `apify_run_id`, fetches the dataset, normalizes, ingests, and marks the run `done`/`error`. New helpers live in `apps/collector/src/collect.ts` (`startCollect`, `finishCollect`); `collectAccount` is kept for the standalone `runner.ts` and tests.
+- **Web → collector uses a Service Binding, not a public URL.** Same-account worker-to-worker `fetch()` to a `workers.dev` URL loops back to the caller (web got a 404 from itself). `apps/web/wrangler.jsonc` now has `services: [{ binding: "COLLECTOR", service: "celine-collector" }]`. The action calls `collector.fetch(new Request("https://collector/manual-collect", init))`, falling back to `COLLECTOR_URL` fetch only for local dev.
+- **Binding passed via AsyncLocalStorage.** This RR7 app has middleware enabled, so `requestHandler` rejects a plain load-context object (`Invalid context ... must be RouterContextProvider`). Instead of a load context, the `COLLECTOR` Fetcher is passed through `apps/web/app/lib/collector.server.ts` (`runWithCollector`/`getCollector`), mirroring the existing `runWithDb`/`getDb` pattern in `db.server.ts`. `workers/app.ts` wraps the handler with both.
+
+### Deployed resources (Cloudflare account 9a77643c…, subdomain `vousmemanquez`)
+
+- Web: `https://celineit.vousmemanquez.workers.dev` — secrets `COLLECTOR_URL` (collector public URL, used by local/fallback only), `COLLECTOR_SECRET`.
+- Collector: `https://celine-collector.vousmemanquez.workers.dev` — secrets `APIFY_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET`, `MANUAL_COLLECT_SECRET`; vars `MAX_ITEMS`, `PUBLIC_URL` (webhook base). Reuses the web Hyperdrive config id `07f80eaefaa6470d9cf0fa956626d603` (same Supabase DB). Daily cron `0 3 * * *` still set.
+- `COLLECTOR_SECRET` (web) == `MANUAL_COLLECT_SECRET` (collector) == the `?secret=` on the webhook URL. Rotate together.
+
+### Running locally
+
+- Web: `npm run dev -w @celine/web` (sources `.dev.vars`; served on 5173/5174). Local dev has no service binding, so it falls back to `COLLECTOR_URL=http://localhost:8788`.
+- Collector: `wrangler dev --port 8788` from `apps/collector`, with `WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` exported (= the Supabase `DATABASE_URL`) so Hyperdrive connects locally. Locally the sync path completes because miniflare has no post-response time limit.
+- `apps/collector/.dev.vars` must have `MANUAL_COLLECT_SECRET` matching web `.dev.vars` `COLLECTOR_SECRET` (both `local-manual-collect-secret`).
+
+### Notes
+
+- `ingest.ts` does no network I/O (DB-only), so the `/webhook` handler stays well under the free-plan 50-subrequest limit (1 dataset fetch + DB writes).
+- Media files are still handled by the separate `backfill-media.ts`; collection itself only stores URLs.

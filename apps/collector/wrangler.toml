@@ -7,27 +7,21 @@ compatibility_flags = ["nodejs_compat"]
 [triggers]
 crons = ["0 3 * * *"]
 
-# Supabase Postgres 연결 (Hyperdrive) — 생성 후 id 입력:
+# Supabase Postgres 연결 (Hyperdrive) — web 워커와 동일한 Hyperdrive 설정 재사용.
 #   npx wrangler hyperdrive create celine-db --connection-string="postgres://..."
 [[hyperdrive]]
 binding = "HYPERDRIVE"
-id = "REPLACE_WITH_HYPERDRIVE_ID"
+id = "07f80eaefaa6470d9cf0fa956626d603"
 
-# 수집 작업 분산 큐
-[[queues.producers]]
-binding = "COLLECT_QUEUE"
-queue = "celine-collect"
-
-[[queues.consumers]]
-queue = "celine-collect"
-max_batch_size = 5
-max_retries = 3
-dead_letter_queue = "celine-collect-dlq"
+# Cloudflare Queues 미사용(무료 플랜): 수집은 scheduled()/manual-collect 에서
+# ctx.waitUntil 로 직접 순차 실행한다.
 
 # 비밀값은 `wrangler secret put` 으로 주입:
 #   npx wrangler secret put APIFY_TOKEN
 [vars]
 MAX_ITEMS = "50"
+# Apify 완료 webhook 수신 주소의 베이스 (이 워커의 공개 URL).
+PUBLIC_URL = "https://celine-collector.vousmemanquez.workers.dev"
 # APIFY_ACTOR_META_ADS = "curious_coder~facebook-ads-library-scraper"
 # APIFY_ACTOR_INSTAGRAM = "apify~instagram-scraper"
 # APIFY_ACTOR_TWITTER = "apidojo~tweet-scraper"

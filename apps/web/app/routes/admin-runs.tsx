@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Form, useActionData, useLoaderData, useNavigation, useRevalidator } from "react-router";
 import { ACTIVE_PLATFORMS } from "@celine/shared";
 import { Card, CardHeader, KpiDelta, PlatformChip } from "~/components/ui";
+import { getCollector } from "~/lib/collector.server";
 import { getCollectableAccounts, getRuns, getRunStats } from "~/lib/queries.server";
 import type { Platform } from "~/mock/data";
 
@@ -38,18 +39,27 @@ export async function action({ request, context }: { request: Request; context?:
   if (accountIds.length === 0) return { ok: false, error: "수집할 브랜드/매체 조합을 선택해 주세요." };
 
   const env = envFromContext(context);
-  if (!env.COLLECTOR_URL || !env.COLLECTOR_SECRET) {
-    return { ok: false, error: "COLLECTOR_URL 또는 COLLECTOR_SECRET 설정이 없습니다." };
+  const collector = getCollector();
+  if (!env.COLLECTOR_SECRET) {
+    return { ok: false, error: "COLLECTOR_SECRET 설정이 없습니다." };
+  }
+  if (!collector && !env.COLLECTOR_URL) {
+    return { ok: false, error: "COLLECTOR_URL 설정이 없습니다." };
   }
 
-  const res = await fetch(`${String(env.COLLECTOR_URL).replace(/\/$/, "")}/manual-collect`, {
+  const init: RequestInit = {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-celine-collect-secret": String(env.COLLECTOR_SECRET),
     },
     body: JSON.stringify({ accountIds, maxItems }),
-  });
+  };
+  // 프로덕션: 같은 계정 Worker 간 public URL fetch 는 loopback 되므로 Service Binding(COLLECTOR) 사용.
+  // 로컬 dev: 바인딩이 없으면 COLLECTOR_URL(예: http://localhost:8788) 로 직접 호출.
+  const res = collector
+    ? await collector.fetch(new Request("https://collector/manual-collect", init))
+    : await fetch(`${String(env.COLLECTOR_URL).replace(/\/$/, "")}/manual-collect`, init);
   const data = (await res.json().catch(() => null)) as Partial<ActionData> | null;
   if (!res.ok || !data?.ok) {
     return { ok: false, error: data && "error" in data && data.error ? data.error : `collector 요청 실패 (${res.status})` };
@@ -434,7 +444,7 @@ export default function AdminRuns() {
                   <tr key={r.id} className={`hover:bg-surface-dim/30 transition-colors ${r.status === "error" ? "bg-error-container/20" : ""}`}>
                     <td className="px-container-padding py-3 font-body-md text-body-md font-semibold">{r.brand}</td>
                     <td className="px-container-padding py-3"><PlatformChip platform={r.platform} withIcon /></td>
-                    <td className="px-container-padding py-3 font-body-sm text-body-sm tabular-nums text-on-surface-variant">{r.lastRun}</td>
+                    <td className="px-container-padding py-3 font-body-sm text-body-sm tabular-nums text-on-surface-variant"><LocalTime iso={r.startedAtISO} fallback={r.lastRun} /></td>
                     <td className="px-container-padding py-3">
                       <span className={`inline-flex items-center gap-1.5 rounded px-2 py-1 font-label-caps text-[10px] ${s.cls}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -454,6 +464,16 @@ export default function AdminRuns() {
   );
 }
 
+// 서버가 넘긴 ISO 타임스탬프를 사용자의 로컬 타임존 시각(HH:MM)으로 표시.
+// SSR/첫 렌더는 UTC 폴백을 그대로 써서 하이드레이션 mismatch 를 피하고, 마운트 후 로컬 시각으로 교체.
+function LocalTime({ iso, fallback }: { iso: string | null; fallback: string }) {
+  const [local, setLocal] = useState<string | null>(null);
+  useEffect(() => {
+    if (iso) setLocal(new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+  }, [iso]);
+  return <>{local ?? fallback}</>;
+}
+
 function RunStatusRow({
   run,
   emphasize = false,
@@ -465,6 +485,7 @@ function RunStatusRow({
     status: string;
     items: number | null;
     lastRun: string;
+    startedAtISO: string | null;
     duration: string;
   };
   emphasize?: boolean;
@@ -480,7 +501,7 @@ function RunStatusRow({
         <span className="block truncate font-body-sm text-body-sm font-semibold">{run.brand}</span>
         <span className="mt-1 flex items-center gap-2">
           <PlatformChip platform={run.platform} />
-          <span className="font-label-muted text-[11px] text-on-surface-variant">{run.lastRun}</span>
+          <span className="font-label-muted text-[11px] text-on-surface-variant"><LocalTime iso={run.startedAtISO} fallback={run.lastRun} /></span>
         </span>
       </span>
       <span className="shrink-0 text-right">

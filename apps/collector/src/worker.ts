@@ -8,11 +8,10 @@ import { brandAccounts, brands, createDb } from "@celine/db";
 import { ACTIVE_PLATFORMS, type Platform } from "@celine/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { ApifyClient } from "./apify";
-import { collectAccount } from "./collect";
+import { finishCollect, startCollect, type CollectAccount } from "./collect";
 
 export interface Env {
   HYPERDRIVE: { connectionString: string };
-  COLLECT_QUEUE: Queue<QueueMessage>;
   APIFY_TOKEN: string;
   APIFY_ACTOR_META_ADS?: string;
   APIFY_ACTOR_INSTAGRAM?: string;
@@ -20,16 +19,8 @@ export interface Env {
   APIFY_ACTOR_TIKTOK?: string;
   MAX_ITEMS?: string;
   MANUAL_COLLECT_SECRET?: string;
-}
-
-interface QueueMessage {
-  accountId: string;
-  platform: Platform;
-  handle: string;
-  profileUrl: string | null;
-  apifyInput: Record<string, unknown> | null;
-  date: string;
-  maxItems?: number;
+  // 이 워커의 공개 URL. Apify 완료 webhook 수신 주소(${PUBLIC_URL}/webhook)에 사용.
+  PUBLIC_URL?: string;
 }
 
 function actorFor(env: Env, platform: Platform): string | undefined {
@@ -54,6 +45,39 @@ function parseMaxItems(value: unknown, fallback: number): number {
   return Math.max(1, Math.min(200, Math.floor(value)));
 }
 
+// 이 워커의 공개 webhook 주소. Apify 가 완료 시 호출한다(외부→워커라 loopback 무관).
+function webhookUrlOf(env: Env): string | undefined {
+  if (!env.PUBLIC_URL) return undefined;
+  const base = env.PUBLIC_URL.replace(/\/$/, "");
+  return env.MANUAL_COLLECT_SECRET
+    ? `${base}/webhook?secret=${encodeURIComponent(env.MANUAL_COLLECT_SECRET)}`
+    : `${base}/webhook`;
+}
+
+// Cloudflare Queues 없이(무료 플랜) 각 계정의 Apify run 을 "시작"만 하고 즉시 끝낸다.
+// 실제 데이터 적재는 Apify 완료 webhook(/webhook) 에서 처리하므로 Worker 실행 시간이 짧다.
+// startRun 은 빠르게(수백 ms) 반환되므로 병렬로 시작한다.
+async function startMany(
+  env: Env,
+  accounts: CollectAccount[],
+  date: string,
+  maxItems: number,
+): Promise<void> {
+  const db = createDb(env.HYPERDRIVE.connectionString);
+  const apify = new ApifyClient(env.APIFY_TOKEN);
+  const webhookUrl = webhookUrlOf(env);
+  await Promise.all(
+    accounts.map((account) =>
+      startCollect(db, apify, account, {
+        date,
+        maxItems,
+        actorOverride: actorFor(env, account.platform),
+        webhookUrl,
+      }).catch(() => undefined),
+    ),
+  );
+}
+
 export default {
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     const db = createDb(env.HYPERDRIVE.connectionString);
@@ -76,52 +100,18 @@ export default {
       (r) => ACTIVE_PLATFORMS.includes(r.platform as Platform) && dueToday(r.cadence, day),
     );
 
-    // Queue 로 계정별 메시지 발행 (분산·재시도)
-    await Promise.all(
-      due.map((r) =>
-        env.COLLECT_QUEUE.send({
-          accountId: r.id,
-          platform: r.platform as Platform,
-          handle: r.handle,
-          profileUrl: r.profileUrl,
-          apifyInput: r.apifyInput as Record<string, unknown> | null,
-          date: today,
-        }),
-      ),
-    );
-    ctx.waitUntil(Promise.resolve());
+    // Queue 없이(무료 플랜) Apify run 을 비동기로 시작만 한다. 적재는 완료 webhook 에서.
+    const accounts: CollectAccount[] = due.map((r) => ({
+      id: r.id,
+      platform: r.platform as Platform,
+      handle: r.handle,
+      profileUrl: r.profileUrl,
+      apifyInput: r.apifyInput as Record<string, unknown> | null,
+    }));
+    ctx.waitUntil(startMany(env, accounts, today, Number(env.MAX_ITEMS ?? 50)));
   },
 
-  async queue(batch: MessageBatch<QueueMessage>, env: Env): Promise<void> {
-    const db = createDb(env.HYPERDRIVE.connectionString);
-    const apify = new ApifyClient(env.APIFY_TOKEN);
-    const max = Number(env.MAX_ITEMS ?? 50);
-
-    for (const msg of batch.messages) {
-      const m = msg.body;
-      try {
-        const maxItems = m.maxItems ?? max;
-        const res = await collectAccount(
-          db,
-          apify,
-          {
-            id: m.accountId,
-            platform: m.platform,
-            handle: m.handle,
-            profileUrl: m.profileUrl,
-            apifyInput: m.apifyInput,
-          },
-          { date: m.date, maxItems, actorOverride: actorFor(env, m.platform) },
-        );
-        if (res.error) msg.retry();
-        else msg.ack();
-      } catch {
-        msg.retry(); // 최종 실패는 dead-letter queue 로 (wrangler.toml 설정)
-      }
-    }
-  },
-
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/health") return new Response("ok");
     if (url.pathname === "/manual-collect" && req.method === "POST") {
@@ -164,19 +154,16 @@ export default {
         (r) => ACTIVE_PLATFORMS.includes(r.platform as Platform),
       );
       const inactiveOrMissing = ids.length - queueable.length;
-      await Promise.all(
-        queueable.map((r) =>
-          env.COLLECT_QUEUE.send({
-            accountId: r.id,
-            platform: r.platform as Platform,
-            handle: r.handle,
-            profileUrl: r.profileUrl,
-            apifyInput: r.apifyInput as Record<string, unknown> | null,
-            date: today,
-            maxItems,
-          }),
-        ),
-      );
+      const accounts: CollectAccount[] = queueable.map((r) => ({
+        id: r.id,
+        platform: r.platform as Platform,
+        handle: r.handle,
+        profileUrl: r.profileUrl,
+        apifyInput: r.apifyInput as Record<string, unknown> | null,
+      }));
+      // Apify run 을 시작(빠름)한 뒤 202 응답. 데이터 적재는 완료 webhook 에서.
+      // 진행상황은 관리 화면의 collection_runs 폴링으로 노출된다.
+      await startMany(env, accounts, today, maxItems);
 
       return json({
         ok: true,
@@ -186,8 +173,37 @@ export default {
         maxItems,
       }, 202);
     }
-    // /webhook: 향후 Apify 비동기 완료 알림 수신 지점 (현재 queue 가 동기 처리)
+    // Apify 완료 webhook 수신 → 데이터셋 적재 + 상태 확정.
     if (url.pathname === "/webhook" && req.method === "POST") {
+      if (env.MANUAL_COLLECT_SECRET && url.searchParams.get("secret") !== env.MANUAL_COLLECT_SECRET) {
+        return json({ ok: false, error: "Unauthorized" }, 401);
+      }
+      let payload: {
+        eventType?: string;
+        eventData?: { actorRunId?: string };
+        resource?: { id?: string; defaultDatasetId?: string; status?: string };
+      };
+      try {
+        payload = await req.json();
+      } catch {
+        return json({ ok: false, error: "Invalid JSON body" }, 400);
+      }
+      const apifyRunId = payload.eventData?.actorRunId ?? payload.resource?.id;
+      if (!apifyRunId) return json({ ok: false, error: "actorRunId 없음" }, 400);
+      const status = payload.resource?.status ?? payload.eventType ?? "";
+      const succeeded = status === "SUCCEEDED" || payload.eventType === "ACTOR.RUN.SUCCEEDED";
+
+      const db = createDb(env.HYPERDRIVE.connectionString);
+      const apify = new ApifyClient(env.APIFY_TOKEN);
+      // 즉시 202 로 Apify 에 응답하고, 적재는 백그라운드로(데이터는 이미 준비됨 → 짧음).
+      ctx.waitUntil(
+        finishCollect(db, apify, {
+          apifyRunId,
+          datasetId: payload.resource?.defaultDatasetId,
+          succeeded,
+          statusText: String(status),
+        }).catch(() => undefined),
+      );
       return new Response("accepted", { status: 202 });
     }
     return new Response("Celine collector", { status: 200 });
