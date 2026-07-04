@@ -15,7 +15,7 @@ export async function loader() {
 }
 
 type ActionData =
-  | { ok: true; queued: number; skipped: number; date: string; maxItems: number }
+  | { ok: true; queued: number; skipped: number; requested: number; date: string; maxItems: number }
   | { ok: false; error: string };
 
 function envFromContext(context: unknown) {
@@ -58,6 +58,7 @@ export async function action({ request, context }: { request: Request; context?:
     ok: true,
     queued: Number(data.queued ?? 0),
     skipped: Number(data.skipped ?? 0),
+    requested: accountIds.length,
     date: String(data.date ?? ""),
     maxItems: Number(data.maxItems ?? maxItems),
   };
@@ -105,6 +106,9 @@ export default function AdminRuns() {
       [r.brand, r.platform, r.status, r.error ?? ""].some((v) => String(v).toLowerCase().includes(q)),
     );
   }, [query, runs]);
+  const runningRuns = useMemo(() => runs.filter((r) => r.status === "running").slice(0, 4), [runs]);
+  const recentProgressRuns = useMemo(() => runs.slice(0, 5), [runs]);
+  const latestRun = recentProgressRuns[0];
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -281,7 +285,17 @@ export default function AdminRuns() {
             </div>
 
             <div className="rounded border border-outline-variant/80 bg-surface-container-low p-4">
-              <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">실행 준비</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">실행 준비</span>
+                <button
+                  type="button"
+                  onClick={() => revalidator.revalidate()}
+                  className="inline-flex items-center gap-1 rounded border border-outline-variant/80 bg-surface-container-lowest px-2 py-1 font-label-muted text-[11px] text-on-surface-variant transition-colors hover:border-primary hover:text-primary"
+                >
+                  <span className="material-symbols-outlined notranslate text-[15px]">refresh</span>
+                  상태 갱신
+                </button>
+              </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded bg-surface-container-lowest p-3">
                   <p className="font-label-muted text-[11px] text-on-surface-variant">선택 조합</p>
@@ -320,10 +334,55 @@ export default function AdminRuns() {
                     : "border-error/30 bg-error-container/60 text-error"
                 }`}>
                   {actionData.ok
-                    ? `${actionData.queued}개 수집 작업을 Queue에 넣었습니다. 실패/제외 ${actionData.skipped}개.`
+                    ? `${actionData.queued}개 수집 작업을 Queue에 넣었습니다. 요청 ${actionData.requested}개, 실패/제외 ${actionData.skipped}개.`
                     : actionData.error}
                 </div>
               )}
+              <div className="mt-4 rounded border border-outline-variant/80 bg-surface-container-lowest p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">수집 진행상황</span>
+                  <span className="font-label-muted text-[11px] text-on-surface-variant">{seconds}초 후 자동 갱신</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded bg-surface-container-low p-2">
+                    <p className="font-label-muted text-[10px] text-on-surface-variant">Queue</p>
+                    <p className="mt-1 font-body-md text-body-md font-semibold tabular-nums">
+                      {actionData?.ok ? actionData.queued : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded bg-surface-container-low p-2">
+                    <p className="font-label-muted text-[10px] text-on-surface-variant">진행 중</p>
+                    <p className="mt-1 font-body-md text-body-md font-semibold tabular-nums">{runningRuns.length}</p>
+                  </div>
+                  <div className="rounded bg-surface-container-low p-2">
+                    <p className="font-label-muted text-[10px] text-on-surface-variant">최근 상태</p>
+                    <p className="mt-1 truncate font-body-md text-body-md font-semibold">
+                      {latestRun ? STATUS_STYLE[latestRun.status]?.label ?? latestRun.status : "—"}
+                    </p>
+                  </div>
+                </div>
+                {runningRuns.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {runningRuns.map((run) => (
+                      <RunStatusRow key={run.id} run={run} emphasize />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded border border-dashed border-outline-variant/80 p-3 font-body-sm text-body-sm text-on-surface-variant">
+                    {actionData?.ok
+                      ? "Queue 등록 직후입니다. Collector가 실행을 시작하면 진행 중 항목이 여기에 표시됩니다."
+                      : "수집을 시작하면 Queue 등록 수와 실행 상태가 여기에 표시됩니다."}
+                  </div>
+                )}
+                {recentProgressRuns.length > 0 && (
+                  <div className="mt-3 space-y-2 border-t border-outline-variant/70 pt-3">
+                    <span className="font-label-muted text-[11px] text-on-surface-variant">최근 실행</span>
+                    {recentProgressRuns.slice(0, 3).map((run) => (
+                      <RunStatusRow key={run.id} run={run} />
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={selectedAccounts.length === 0 || isSubmitting}
@@ -390,6 +449,48 @@ export default function AdminRuns() {
           </table>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function RunStatusRow({
+  run,
+  emphasize = false,
+}: {
+  run: {
+    id: string;
+    brand: string;
+    platform: Platform;
+    status: string;
+    items: number | null;
+    lastRun: string;
+    duration: string;
+  };
+  emphasize?: boolean;
+}) {
+  const style = STATUS_STYLE[run.status] ?? STATUS_STYLE.done;
+  return (
+    <div
+      className={`flex items-center justify-between gap-2 rounded border border-outline-variant/70 bg-surface-container-low p-2 ${
+        emphasize ? "shadow-[inset_3px_0_0_rgba(200,164,93,0.75)]" : ""
+      }`}
+    >
+      <span className="min-w-0">
+        <span className="block truncate font-body-sm text-body-sm font-semibold">{run.brand}</span>
+        <span className="mt-1 flex items-center gap-2">
+          <PlatformChip platform={run.platform} />
+          <span className="font-label-muted text-[11px] text-on-surface-variant">{run.lastRun}</span>
+        </span>
+      </span>
+      <span className="shrink-0 text-right">
+        <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-label-caps text-[10px] ${style.cls}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+          {style.label}
+        </span>
+        <span className="mt-1 block font-label-muted text-[11px] text-on-surface-variant">
+          {run.items ? `${run.items}건` : run.duration}
+        </span>
+      </span>
     </div>
   );
 }

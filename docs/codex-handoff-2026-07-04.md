@@ -60,6 +60,7 @@ The main user-facing goals were:
   - Added summary/admin stats and updated surface styling.
   - Added manual collection controls: select all, brand-level selection, platform-level selection, selected-combination preview, per-account max item cap, and submit state.
   - The route action calls the collector worker `POST /manual-collect` endpoint with `COLLECTOR_URL` and `COLLECTOR_SECRET`.
+  - The execution prep panel now also shows collection progress: queued count from the last manual request, current `running` jobs from `collection_runs`, latest status, recent run rows, and a manual refresh button.
 
 - `apps/collector/src/worker.ts`
   - Added `POST /manual-collect`.
@@ -249,6 +250,14 @@ After adding Meta seed accounts for manual collection, these checks were run aga
 npm run typecheck -w @celine/web
 npm run build -w @celine/web
 npm test -w @celine/collector
+git diff --check
+```
+
+After adding the admin collection progress panel, these checks were run again and passed:
+
+```bash
+npm run typecheck -w @celine/web
+npm run build -w @celine/web
 git diff --check
 ```
 
