@@ -4,9 +4,9 @@
 // - fetch(): Apify 완료 webhook 수신 엔드포인트(향후 비동기 전환용) + 헬스체크
 //
 // DB 연결은 Cloudflare Hyperdrive 바인딩으로 Supabase Postgres 에 접속한다.
-import { brandAccounts, brands, createDb } from "@celine/db";
+import { brandAccounts, brands, collectionRuns, createDb } from "@celine/db";
 import { ACTIVE_PLATFORMS, type Platform } from "@celine/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
 import { ApifyClient } from "./apify";
 import { finishCollect, startCollect, type CollectAccount } from "./collect";
 
@@ -78,8 +78,54 @@ async function startMany(
   );
 }
 
+// 폴링 기반 안전망(webhook 유실/버스트 대비). status='running' + apify_run_id 인 run 을
+// 소량씩 골라 Apify 상태를 확인하고, 끝난 것(SUCCEEDED/FAILED)을 확정한다.
+// 잦은 cron 으로 호출되어 밀린 run 을 점진적으로 배수한다. limit 를 작게 유지해 무료 플랜
+// Worker 실행 예산 안에서 순차 적재가 완료되도록 한다.
+const TERMINAL_FAIL = new Set(["FAILED", "ABORTED", "TIMED-OUT", "TIMED_OUT"]);
+
+async function reconcilePending(env: Env, limit = 4): Promise<{ checked: number; done: number }> {
+  const db = createDb(env.HYPERDRIVE.connectionString);
+  const apify = new ApifyClient(env.APIFY_TOKEN);
+  const rows = await db
+    .select({ apifyRunId: collectionRuns.apifyRunId })
+    .from(collectionRuns)
+    .where(
+      and(
+        eq(collectionRuns.status, "running"),
+        isNotNull(collectionRuns.apifyRunId),
+        gt(collectionRuns.startedAt, sql`now() - interval '6 hours'`),
+      ),
+    )
+    .orderBy(collectionRuns.startedAt)
+    .limit(limit);
+
+  let done = 0;
+  for (const r of rows) {
+    const runId = r.apifyRunId;
+    if (!runId) continue;
+    const run = await apify.getRun(runId).catch(() => null);
+    if (!run) continue;
+    if (run.status === "SUCCEEDED") {
+      const res = await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: true });
+      if (res.ok) done++;
+    } else if (TERMINAL_FAIL.has(run.status)) {
+      await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: false, statusText: run.status });
+      done++;
+    }
+    // READY/RUNNING 등은 다음 tick 으로.
+  }
+  return { checked: rows.length, done };
+}
+
 export default {
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    // 잦은 cron(예: 매분)은 밀린 수집 run 을 배수(reconcile)하는 안전망으로 동작.
+    // 일일 cron(0 3 * * *)만 실제 수집을 시작한다.
+    if (event.cron !== "0 3 * * *") {
+      await reconcilePending(env);
+      return;
+    }
     const db = createDb(env.HYPERDRIVE.connectionString);
     const today = new Date().toISOString().slice(0, 10);
     const day = new Date().getUTCDate();

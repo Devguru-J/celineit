@@ -45,6 +45,17 @@ export class ApifyClient {
     return { runId: data.data.id, datasetId: data.data.defaultDatasetId };
   }
 
+  /** run 상태 폴링(reconciler 용). SUCCEEDED/FAILED 등 + 데이터셋 id 반환. */
+  async getRun(runId: string): Promise<{ status: string; datasetId: string } | null> {
+    const url = new URL(`${BASE}/actor-runs/${encodeURIComponent(runId)}`);
+    url.searchParams.set("token", this.token);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { data?: { status?: string; defaultDatasetId?: string } };
+    if (!data.data?.status) return null;
+    return { status: data.data.status, datasetId: data.data.defaultDatasetId ?? "" };
+  }
+
   async getDatasetItems(datasetId: string): Promise<unknown[]> {
     const url = new URL(`${BASE}/datasets/${datasetId}/items`);
     url.searchParams.set("token", this.token);

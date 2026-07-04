@@ -3,9 +3,12 @@ main = "src/worker.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 매일 03:00 UTC 수집 트리거
+# 트리거:
+#   - "0 3 * * *": 매일 03:00 UTC 수집 시작
+#   - "* * * * *": 매분 reconcile — 완료된 Apify run 을 확인해 적재/상태 확정
+#     (webhook 유실·버스트 대비 안전망; scheduled() 에서 event.cron 으로 분기)
 [triggers]
-crons = ["0 3 * * *"]
+crons = ["0 3 * * *", "* * * * *"]
 
 # Supabase Postgres 연결 (Hyperdrive) — web 워커와 동일한 Hyperdrive 설정 재사용.
 #   npx wrangler hyperdrive create celine-db --connection-string="postgres://..."

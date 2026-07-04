@@ -351,3 +351,18 @@ The manual "Apify 수집 시작" button now works in production. It was previous
 
 - `ingest.ts` does no network I/O (DB-only), so the `/webhook` handler stays well under the free-plan 50-subrequest limit (1 dataset fetch + DB writes).
 - Media files are still handled by the separate `backfill-media.ts`; collection itself only stores URLs.
+
+### Reliability: reconciler + parallel ingest (follow-up)
+
+Symptom reported after the first prod cut-over: after collecting, only `meta_ads` reliably showed; IG/X/TikTok data "appeared then disappeared." Root causes (all in the DB via diagnostics — data was never actually deleted; the display was fine):
+
+1. **Webhook burst.** `startMany` fires all ~19 Apify runs in parallel, so they finish within ~60s and ~19 completion webhooks hit the collector at once. On the free plan most `ctx.waitUntil(finishCollect)` tasks got cut off, leaving runs stuck `running` (Apify showed `SUCCEEDED`).
+2. **Slow `meta_ads` ingest.** A single `meta_ads` run ingest was 14–58s because `ingest.ts` awaited every per-item query serially (ad upsert → presence → days_active → media, ×N), using only 1 of the pool's connections. That exceeds the Worker post-response budget even without concurrency.
+
+Fixes:
+- **Polling reconciler** (`reconcilePending` in `worker.ts`): a second cron `* * * * *` sweeps up to 4 `status='running'` runs (with `apify_run_id`, started < 6h ago), polls Apify (`ApifyClient.getRun`), and completes any `SUCCEEDED`/failed via `finishCollect`. `scheduled()` branches on `event.cron` — `0 3 * * *` collects, everything else reconciles. The webhook stays as the fast path; the reconciler is the guarantee, so lost/cut webhooks self-heal within a minute. `finishCollect` is idempotent (skips runs already `done`/`error`).
+- **Parallel ingest** (`ingest.ts`): the ad and post loops are now `await Promise.all(result.ads.map(...))` / `result.posts.map(...)`, overlapping round-trips within the `createDb` pool (`max: 5`). Per-item bodies are unchanged and stay internally sequential; JS single-threading keeps `seenAdIds`/`stats` accumulation race-free. `meta_ads` now completes within the Worker budget in the common case; the reconciler covers the rest.
+
+Verified: a fresh full collection (all platforms) reaches `done` for every run within ~1–3 min; a `meta_ads`-only batch of 5 accounts (maxItems 50) all reached `done` (464 items).
+
+If `meta_ads` ever needs to be faster/heavier still, the next step is bulk multi-row inserts in `ingest.ts` (collapse the N per-item upserts/presence/media into one statement each) — deferred as a larger, riskier change to the tested ingest path.

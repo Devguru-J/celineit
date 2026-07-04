@@ -41,7 +41,10 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
   const seenAdIds: string[] = [];
 
   // ── 광고 upsert + presence + longevity ──
-  for (const ad of result.ads) {
+  // 계정당 수십 건 × 항목별 4~5 라운드트립이면 직렬 처리 시 Worker 실행 예산을 초과한다.
+  // createDb 풀(max:5) 범위에서 항목을 동시 처리해 라운드트립을 겹치게 한다.
+  // JS 는 단일 스레드라 seenAdIds/stats 누적은 인터리브만 될 뿐 경쟁 상태가 없다.
+  await Promise.all(result.ads.map(async (ad) => {
     // Meta Ad Library 처럼 실제 광고 기간이 있으면 그걸 사용, 없으면 관측일 기준
     const firstSeen = ad.startDate ?? date;
     const lastSeen = ad.endDate ?? date;
@@ -99,7 +102,7 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
       await recomputeDaysActive(db, row.id);
     }
     stats.mediaLinked += await linkMedia(db, "ad", row.id, ad.mediaUrls);
-  }
+  }));
 
   // ── 오늘 안 보인 활성 광고 → 비활성 처리 (longevity 종료) ──
   // 실패/빈 스크래이프로 전체를 비활성화하는 사고를 막기 위해, 광고가 1건 이상 관측된 경우에만 수행.
@@ -127,8 +130,8 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
     stats.adsInactivated = stale.length;
   }
 
-  // ── 포스트 upsert + 일별 지표 ──
-  for (const post of result.posts) {
+  // ── 포스트 upsert + 일별 지표 ── (광고와 동일하게 풀 범위 내 동시 처리)
+  await Promise.all(result.posts.map(async (post) => {
     const [row] = await db
       .insert(postsTable)
       .values({
@@ -174,7 +177,7 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
     }
 
     stats.mediaLinked += await linkMedia(db, "post", row.id, post.mediaUrls);
-  }
+  }));
 
   // ── 계정 단위 지표 (팔로워 등) ──
   if (result.accountMetric) {
