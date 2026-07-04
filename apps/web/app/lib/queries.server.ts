@@ -29,6 +29,7 @@ export type FeedItem = {
   views?: number | null;
   daysActive?: number | null;
   imageUrl?: string | null;
+  mediaCount?: number;
 };
 
 // owner_id → 첫 미디어 URL 매핑
@@ -49,6 +50,20 @@ async function firstMediaByOwner(ownerType: "ad" | "post", ownerIds: string[]) {
   }
   const map = new Map<string, string>();
   for (const [k, v] of best) map.set(k, v.url);
+  return map;
+}
+
+// owner_id → 미디어 개수 (캐러셀 1/N 배지용)
+async function mediaCountByOwner(ownerType: "ad" | "post", ownerIds: string[]) {
+  const db = getDb();
+  if (ownerIds.length === 0) return new Map<string, number>();
+  const rows = await db
+    .select({ ownerId: mediaAssets.ownerId, n: sql<number>`count(*)::int` })
+    .from(mediaAssets)
+    .where(and(eq(mediaAssets.ownerType, ownerType), inArray(mediaAssets.ownerId, ownerIds)))
+    .groupBy(mediaAssets.ownerId);
+  const map = new Map<string, number>();
+  for (const r of rows) map.set(r.ownerId, r.n);
   return map;
 }
 
@@ -93,6 +108,8 @@ export async function getFeed(): Promise<FeedItem[]> {
 
   const postMedia = await firstMediaByOwner("post", postRows.map((p) => p.id));
   const adMedia = await firstMediaByOwner("ad", adRows.map((a) => a.id));
+  const postMediaCount = await mediaCountByOwner("post", postRows.map((p) => p.id));
+  const adMediaCount = await mediaCountByOwner("ad", adRows.map((a) => a.id));
 
   const items: FeedItem[] = [
     ...postRows.map((p) => ({
@@ -107,6 +124,7 @@ export async function getFeed(): Promise<FeedItem[]> {
       comments: p.comments,
       views: p.views,
       imageUrl: postMedia.get(p.id) ?? null,
+      mediaCount: postMediaCount.get(p.id) ?? 0,
     })),
     ...adRows.map((a) => ({
       id: a.id,
@@ -118,6 +136,7 @@ export async function getFeed(): Promise<FeedItem[]> {
       date: a.lastSeen,
       daysActive: a.daysActive,
       imageUrl: adMedia.get(a.id) ?? null,
+      mediaCount: adMediaCount.get(a.id) ?? 0,
     })),
   ];
   items.sort((x, y) => (x.date ?? "") < (y.date ?? "") ? 1 : -1);
