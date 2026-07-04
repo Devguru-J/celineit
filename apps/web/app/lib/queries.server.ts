@@ -12,7 +12,7 @@ import {
   postMetricsDaily,
   posts as postsT,
 } from "@celine/db";
-import { FOCUS_KEYWORDS, type Platform } from "@celine/shared";
+import { ACTIVE_PLATFORMS, FOCUS_KEYWORDS, type Platform } from "@celine/shared";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getDb } from "./db.server";
 
@@ -392,6 +392,238 @@ function pctDelta(cur: number, prev: number): KpiDelta | undefined {
   return { dir: pct > 0 ? "up" : pct < 0 ? "down" : "flat", text: `${pct > 0 ? "+" : ""}${pct}%` };
 }
 
+type MatrixCell = {
+  platform: Platform;
+  followers: number | null;
+  posts: number;
+  activeAds: number;
+  engagement: number;
+  score: number;
+};
+
+export type PlatformMatrixRow = {
+  brand: string;
+  slug: string;
+  totalScore: number;
+  platforms: MatrixCell[];
+};
+
+export type DashboardAlert = {
+  id: string;
+  severity: "high" | "medium" | "low";
+  icon: string;
+  title: string;
+  detail: string;
+  linkTo: string;
+};
+
+export type DataQualityStatus = {
+  platform: Platform;
+  status: "fresh" | "stale" | "missing";
+  lastRun: string | null;
+  accounts: number;
+  message: string;
+};
+
+function toDateOnly(v: Date | string | null | undefined) {
+  if (!v) return null;
+  return typeof v === "string" ? v.slice(0, 10) : v.toISOString().slice(0, 10);
+}
+
+function platformLabel(platform: Platform) {
+  switch (platform) {
+    case "meta_ads":
+      return "Meta";
+    case "instagram":
+      return "Instagram";
+    case "twitter":
+      return "X";
+    case "tiktok":
+      return "TikTok";
+    case "tiktok_ads":
+      return "TikTok Ads";
+    default:
+      return platform;
+  }
+}
+
+function contentTagOf(text: string | null | undefined, format?: string | null) {
+  const t = (text ?? "").toLowerCase();
+  if (/new|新発売|新商品|launch|発売|신제품/.test(t)) return "신제품";
+  if (/sale|off|割引|送料無料|coupon|クーポン|할인|세일/.test(t)) return "프로모션";
+  if (/how to|tutorial|使い方|レビュー|routine|ルーティン|방법|튜토리얼/.test(t)) return "튜토리얼";
+  if (/uv|sun|spf|日焼け|선케어|자외선/.test(t)) return "선케어";
+  if (/lip|リップ|口紅|립/.test(t)) return "립";
+  if (/cream|クリーム|保湿|moisture|hydrating|수분|보습/.test(t)) return "보습";
+  if (/serum|ampoule|美容液|앰플|세럼/.test(t)) return "세럼";
+  if (format === "video") return "영상형";
+  if (format === "carousel") return "캐러셀";
+  return "제품/브랜드";
+}
+
+function engagementOf(v: { likes?: number | null; comments?: number | null; views?: number | null }) {
+  return (v.likes ?? 0) + (v.comments ?? 0) + (v.views ?? 0);
+}
+
+export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
+  const db = getDb();
+  const accounts = await db
+    .select({
+      accountId: brandAccounts.id,
+      brand: brandsT.name,
+      slug: brandsT.slug,
+      platform: brandAccounts.platform,
+    })
+    .from(brandAccounts)
+    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+    .where(eq(brandAccounts.isActive, true));
+
+  const accountIds = accounts.map((a) => a.accountId);
+  if (accountIds.length === 0) return [];
+
+  const [metricRows, postRows, adRows] = await Promise.all([
+    db
+      .select({
+        accountId: accountMetricsDaily.brandAccountId,
+        date: accountMetricsDaily.date,
+        followers: accountMetricsDaily.followers,
+        engagementRate: accountMetricsDaily.engagementRate30d,
+      })
+      .from(accountMetricsDaily)
+      .where(inArray(accountMetricsDaily.brandAccountId, accountIds))
+      .orderBy(accountMetricsDaily.brandAccountId, accountMetricsDaily.date),
+    db
+      .select({
+        accountId: postsT.brandAccountId,
+        posts: sql<number>`count(distinct ${postsT.id})::int`,
+        engagement: sql<number>`coalesce(sum(coalesce(${postMetricsDaily.likes}, 0) + coalesce(${postMetricsDaily.comments}, 0) + coalesce(${postMetricsDaily.views}, 0)), 0)::int`,
+      })
+      .from(postsT)
+      .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
+      .where(inArray(postsT.brandAccountId, accountIds))
+      .groupBy(postsT.brandAccountId),
+    db
+      .select({
+        accountId: adsT.brandAccountId,
+        activeAds: sql<number>`count(*) filter (where ${adsT.isActive} = true)::int`,
+      })
+      .from(adsT)
+      .where(inArray(adsT.brandAccountId, accountIds))
+      .groupBy(adsT.brandAccountId),
+  ]);
+
+  const latestMetric = new Map<string, { followers: number | null; engagementRate: number | null }>();
+  for (const r of metricRows) latestMetric.set(r.accountId, { followers: r.followers ?? null, engagementRate: r.engagementRate ?? null });
+  const postMap = new Map(postRows.map((r) => [r.accountId, r]));
+  const adMap = new Map(adRows.map((r) => [r.accountId, r.activeAds]));
+  const byBrand = new Map<string, PlatformMatrixRow>();
+
+  for (const a of accounts) {
+    const key = a.slug;
+    if (!byBrand.has(key)) {
+      byBrand.set(key, {
+        brand: a.brand,
+        slug: a.slug,
+        totalScore: 0,
+        platforms: ACTIVE_PLATFORMS.map((platform) => ({ platform, followers: null, posts: 0, activeAds: 0, engagement: 0, score: 0 })),
+      });
+    }
+    const row = byBrand.get(key)!;
+    const cell = row.platforms.find((p) => p.platform === a.platform);
+    if (!cell) continue;
+    const metric = latestMetric.get(a.accountId);
+    const posts = postMap.get(a.accountId);
+    cell.followers = metric?.followers ?? cell.followers;
+    cell.posts += posts?.posts ?? 0;
+    cell.activeAds += adMap.get(a.accountId) ?? 0;
+    cell.engagement += posts?.engagement ?? 0;
+    cell.score += (metric?.followers ?? 0) / 1000 + (posts?.posts ?? 0) * 4 + (adMap.get(a.accountId) ?? 0) * 8 + (posts?.engagement ?? 0) / 10000;
+  }
+
+  for (const row of byBrand.values()) row.totalScore = row.platforms.reduce((sum, p) => sum + p.score, 0);
+  return [...byBrand.values()].sort((a, b) => b.totalScore - a.totalScore);
+}
+
+export async function getDataQualityStatus(): Promise<DataQualityStatus[]> {
+  const db = getDb();
+  const [runs, accounts] = await Promise.all([
+    db
+      .select({
+        platform: collectionRuns.platform,
+        status: collectionRuns.status,
+        startedAt: collectionRuns.startedAt,
+        finishedAt: collectionRuns.finishedAt,
+      })
+      .from(collectionRuns)
+      .orderBy(desc(collectionRuns.startedAt))
+      .limit(200),
+    db
+      .select({ platform: brandAccounts.platform, n: sql<number>`count(*)::int` })
+      .from(brandAccounts)
+      .where(eq(brandAccounts.isActive, true))
+      .groupBy(brandAccounts.platform),
+  ]);
+
+  const accountMap = new Map(accounts.map((a) => [a.platform as Platform, a.n]));
+  return ACTIVE_PLATFORMS.map((platform) => {
+    const latest = runs.find((r) => r.platform === platform);
+    const lastRun = toDateOnly(latest?.finishedAt ?? latest?.startedAt);
+    const status =
+      !latest ? "missing" : latest.status === "done" && latest.startedAt.getTime() > Date.now() - 36 * 60 * 60 * 1000 ? "fresh" : "stale";
+    return {
+      platform,
+      status,
+      lastRun,
+      accounts: accountMap.get(platform) ?? 0,
+      message:
+        status === "fresh"
+          ? "최근 수집 성공"
+          : status === "stale"
+            ? latest?.status === "error"
+              ? "최근 수집 실패"
+              : "수집 시점 오래됨"
+            : "수집 기록 없음",
+    };
+  });
+}
+
+export async function getDashboardAlerts(limit = 5): Promise<DashboardAlert[]> {
+  const [changes, quality] = await Promise.all([getRecentChanges(12), getDataQualityStatus()]);
+  const alerts: DashboardAlert[] = [];
+  for (const q of quality.filter((q) => q.status !== "fresh")) {
+    alerts.push({
+      id: `quality-${q.platform}`,
+      severity: q.status === "missing" ? "high" : "medium",
+      icon: q.status === "missing" ? "sync_problem" : "schedule",
+      title: `${platformLabel(q.platform)} 데이터 상태 확인`,
+      detail: q.message,
+      linkTo: "/admin/runs",
+    });
+  }
+  for (const c of changes) {
+    if (c.kind === "follower_spike") {
+      alerts.push({
+        id: `spike-${c.id}`,
+        severity: "high",
+        icon: "trending_up",
+        title: `${c.brand} 팔로워 급증`,
+        detail: c.text ?? `${platformLabel(c.platform)}에서 변화 감지`,
+        linkTo: c.linkTo,
+      });
+    } else if (c.kind === "new_ad") {
+      alerts.push({
+        id: `ad-${c.id}`,
+        severity: "medium",
+        icon: "campaign",
+        title: `${c.brand} 신규 광고`,
+        detail: c.text?.slice(0, 80) || `${platformLabel(c.platform)} 광고 활성화`,
+        linkTo: c.linkTo,
+      });
+    }
+  }
+  return alerts.slice(0, limit);
+}
+
 export async function getSummary() {
   const db = getDb();
   const [
@@ -643,6 +875,85 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
     };
   });
 
+  const contentClusters = [...metricRows.reduce((map, p) => {
+    const tag = contentTagOf(p.caption, p.format);
+    const cur = map.get(tag) ?? { tag, posts: 0, engagement: 0, examples: [] as string[] };
+    cur.posts += 1;
+    cur.engagement += engagementOf(p);
+    if (p.caption && cur.examples.length < 2) cur.examples.push(p.caption);
+    map.set(tag, cur);
+    return map;
+  }, new Map<string, { tag: string; posts: number; engagement: number; examples: string[] }>()).values()]
+    .map((c) => ({ ...c, avgEngagement: c.posts ? Math.round(c.engagement / c.posts) : 0 }))
+    .sort((a, b) => b.engagement - a.engagement)
+    .slice(0, 6);
+
+  const topPlatform = [...platformBreakdown].sort((a, b) => b.engagement + (b.followers ?? 0) / 100 - (a.engagement + (a.followers ?? 0) / 100))[0];
+  const topCluster = contentClusters[0] ?? null;
+  const followerDelta =
+    followerRows.length >= 2 ? followerRows.at(-1)!.followers - followerRows[0].followers : null;
+  const insights = [
+    topPlatform
+      ? `${platformLabel(topPlatform.platform)}가 현재 가장 강한 채널입니다. 게시물 ${topPlatform.posts}개, 반응 ${topPlatform.engagement.toLocaleString()} 기준입니다.`
+      : "채널별 성과 데이터가 더 쌓이면 주력 채널이 표시됩니다.",
+    topCluster
+      ? `${topCluster.tag} 콘텐츠가 반응을 가장 많이 만들고 있습니다. 평균 반응은 ${topCluster.avgEngagement.toLocaleString()}입니다.`
+      : "콘텐츠 클러스터는 게시물 텍스트가 누적되면 표시됩니다.",
+    followerDelta == null
+      ? "팔로워 추세는 2일 이상 계정 지표가 수집되면 계산됩니다."
+      : followerDelta >= 0
+        ? `선택 범위 팔로워가 ${followerDelta.toLocaleString()}명 증가했습니다.`
+        : `선택 범위 팔로워가 ${Math.abs(followerDelta).toLocaleString()}명 감소했습니다.`,
+  ];
+
+  const metaAccountIds = brandAccountsForTrends.filter((a) => a.platform === "meta_ads").map((a) => a.accountId);
+  const metaAds =
+    metaAccountIds.length === 0
+      ? {
+          active: 0,
+          new7d: 0,
+          inactive7d: 0,
+          avgDaysActive: null as number | null,
+          longestActive: null as { id: string; daysActive: number; copy: string | null } | null,
+          creativeReuse: 0,
+          ctaMix: [] as { cta: string; count: number }[],
+        }
+      : await (async () => {
+          const rows = await db
+            .select({
+              id: adsT.id,
+              copy: adsT.adCopy,
+              isActive: adsT.isActive,
+              daysActive: adsT.daysActive,
+              firstSeen: adsT.firstSeen,
+              lastSeen: adsT.lastSeen,
+              raw: adsT.raw,
+            })
+            .from(adsT)
+            .where(inArray(adsT.brandAccountId, metaAccountIds));
+          const activeRows = rows.filter((r) => r.isActive);
+          const cta = new Map<string, number>();
+          let creativeReuse = 0;
+          for (const r of rows) {
+            const meta = extractAdMeta(r.raw);
+            if (meta.variantCount && meta.variantCount > 1) creativeReuse += meta.variantCount;
+            if (meta.cta) cta.set(meta.cta, (cta.get(meta.cta) ?? 0) + 1);
+          }
+          const activeDays = activeRows.map((r) => r.daysActive ?? 0).filter((v) => v > 0);
+          return {
+            active: activeRows.length,
+            new7d: rows.filter((r) => r.firstSeen >= new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)).length,
+            inactive7d: rows.filter((r) => !r.isActive && r.lastSeen >= new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)).length,
+            avgDaysActive: activeDays.length ? Math.round(activeDays.reduce((sum, v) => sum + v, 0) / activeDays.length) : null,
+            longestActive: activeRows
+              .sort((a, b) => (b.daysActive ?? 0) - (a.daysActive ?? 0))
+              .map((r) => ({ id: r.id, daysActive: r.daysActive ?? 0, copy: r.copy }))
+              .at(0) ?? null,
+            creativeReuse,
+            ctaMix: [...cta.entries()].map(([cta, count]) => ({ cta, count })).sort((a, b) => b.count - a.count).slice(0, 5),
+          };
+        })();
+
   return {
     account: {
       brand: base.brand,
@@ -655,6 +966,9 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
     },
     allAccounts: [...brandMap.values()].sort((a, b) => b.n - a.n),
     platformBreakdown,
+    insights,
+    contentClusters,
+    metaAds,
     followerSeries: followerRows.map((r) => ({ date: r.date, value: r.followers ?? 0 })),
     weeklyEngagement,
     topPosts: topPosts.map((p) => {

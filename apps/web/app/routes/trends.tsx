@@ -28,7 +28,7 @@ export default function Trends() {
     );
   }
 
-  const { account, followerSeries, topPosts, allAccounts, platformBreakdown } = trends;
+  const { account, followerSeries, topPosts, allAccounts, platformBreakdown, insights, contentClusters, metaAds } = trends;
   const visibleFollowerSeries = followerSeries.slice(-range);
   const hasFollowers = visibleFollowerSeries.length >= 2 && visibleFollowerSeries.some((p) => p.value > 0);
   const totalEngagement = topPosts.reduce((sum, p) => sum + (p.likes ?? 0) + (p.comments ?? 0) + (p.views ?? 0), 0);
@@ -133,6 +133,57 @@ export default function Trends() {
 
       <div className="grid grid-cols-1 gap-card-gap lg:grid-cols-3">
         <Card className="p-4 sm:p-container-padding lg:col-span-2">
+          <div className="mb-4">
+            <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Insight summary</span>
+            <h3 className="mt-1 font-headline-sm text-headline-sm">브랜드 운영 신호</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {insights.map((insight, index) => (
+              <div key={insight} className="rounded border border-outline-variant/70 bg-surface-container-lowest p-3">
+                <span className="material-symbols-outlined notranslate text-[20px] text-primary">
+                  {index === 0 ? "hub" : index === 1 ? "category" : "trending_up"}
+                </span>
+                <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">{insight}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-container-padding">
+          <div className="mb-4">
+            <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Meta Ads</span>
+            <h3 className="mt-1 font-headline-sm text-headline-sm">광고 라이브러리</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <MiniMetric label="활성 광고" value={String(metaAds.active)} />
+            <MiniMetric label="신규 7일" value={String(metaAds.new7d)} />
+            <MiniMetric label="종료 7일" value={String(metaAds.inactive7d)} />
+            <MiniMetric label="평균 집행일" value={metaAds.avgDaysActive != null ? `${metaAds.avgDaysActive}일` : "—"} />
+          </div>
+          <div className="mt-4 rounded border border-outline-variant/70 bg-surface-container-lowest p-3">
+            <p className="font-label-muted text-[11px] text-on-surface-variant">최장 집행 광고</p>
+            {metaAds.longestActive ? (
+              <Link to={`/item/ad/${metaAds.longestActive.id}`} className="mt-1 block font-body-sm text-body-sm font-semibold hover:text-primary">
+                {metaAds.longestActive.daysActive}일 · {metaAds.longestActive.copy || "광고 문구 없음"}
+              </Link>
+            ) : (
+              <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">활성 Meta 광고 데이터가 없습니다.</p>
+            )}
+          </div>
+          {metaAds.ctaMix.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {metaAds.ctaMix.map((cta) => (
+                <span key={cta.cta} className="rounded border border-outline-variant/70 bg-surface-container-low px-2 py-1 font-label-muted text-[10px] text-on-surface-variant">
+                  {cta.cta} · {cta.count}
+                </span>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-card-gap lg:grid-cols-3">
+        <Card className="p-4 sm:p-container-padding lg:col-span-2">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <h3 className="font-headline-sm text-headline-sm">일별 팔로워</h3>
@@ -207,6 +258,35 @@ export default function Trends() {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader title="캠페인 클러스터" action={<span className="font-label-muted text-label-muted text-on-surface-variant">규칙 기반 분류</span>} />
+        <div className="grid grid-cols-1 divide-y divide-outline-variant md:grid-cols-3 md:divide-x md:divide-y-0">
+          {contentClusters.length === 0 && (
+            <div className="p-4 text-on-surface-variant sm:p-container-padding">게시물 텍스트가 누적되면 클러스터가 표시됩니다.</div>
+          )}
+          {contentClusters.slice(0, 3).map((cluster) => (
+            <div key={cluster.tag} className="p-4 sm:p-container-padding">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Cluster</span>
+                  <h3 className="mt-1 font-headline-sm text-headline-sm">{cluster.tag}</h3>
+                </div>
+                <span className="rounded bg-primary-container/10 px-2 py-1 font-label-muted text-[10px] font-semibold text-primary">
+                  {cluster.posts} posts
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <MiniMetric label="총 반응" value={fmt(cluster.engagement)} />
+                <MiniMetric label="평균 반응" value={fmt(cluster.avgEngagement)} />
+              </div>
+              {cluster.examples[0] && (
+                <p className="mt-3 line-clamp-2 font-body-sm text-body-sm text-on-surface-variant">"{cluster.examples[0]}"</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card>
         <CardHeader title="성과 상위 게시물" action={<span className="font-label-muted text-label-muted text-on-surface-variant">{topPosts.length}개</span>} />

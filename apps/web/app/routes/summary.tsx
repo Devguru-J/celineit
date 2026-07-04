@@ -2,15 +2,30 @@ import { Link, useLoaderData } from "react-router";
 import { BarChart, Card, CardHeader, KpiDelta, PlatformChip } from "~/components/ui";
 import { BrandLogo } from "~/lib/brand-assets";
 import { ACTIVE_PLATFORMS } from "@celine/shared";
-import { getFollowerGrowth, getRecentChanges, getSummary, type RecentChangeKind } from "~/lib/queries.server";
+import {
+  getDashboardAlerts,
+  getDataQualityStatus,
+  getFollowerGrowth,
+  getPlatformMatrix,
+  getRecentChanges,
+  getSummary,
+  type RecentChangeKind,
+} from "~/lib/queries.server";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 요약" }];
 }
 
 export async function loader() {
-  const [summary, recent, followerGrowth] = await Promise.all([getSummary(), getRecentChanges(), getFollowerGrowth()]);
-  return { ...summary, recent, followerGrowth };
+  const [summary, recent, followerGrowth, matrix, alerts, dataQuality] = await Promise.all([
+    getSummary(),
+    getRecentChanges(),
+    getFollowerGrowth(),
+    getPlatformMatrix(),
+    getDashboardAlerts(),
+    getDataQualityStatus(),
+  ]);
+  return { ...summary, recent, followerGrowth, matrix, alerts, dataQuality };
 }
 
 // 이벤트 타입별 표시.
@@ -22,7 +37,7 @@ const CHANGE_META: Record<RecentChangeKind, { icon: string; label: string; cls: 
 };
 
 export default function Summary() {
-  const { kpis, recent, brands, followerGrowth } = useLoaderData<typeof loader>();
+  const { kpis, recent, brands, followerGrowth, matrix, alerts, dataQuality } = useLoaderData<typeof loader>();
   const maxPosts = Math.max(1, ...brands.map((b) => b.postsCount));
   const totalFollowers = followerGrowth.byPlatform.reduce((sum, p) => sum + p.followers, 0);
   const topFollowerPlatform = followerGrowth.byPlatform[0] ?? null;
@@ -78,6 +93,105 @@ export default function Summary() {
           </div>
         ))}
       </div>
+
+      <div className="grid grid-cols-1 gap-card-gap xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader
+            title="브랜드 / 플랫폼 비교"
+            action={<span className="font-label-muted text-label-muted text-on-surface-variant">followers · posts · ads</span>}
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="bg-surface">
+                  <th className="border-b border-outline-variant px-container-padding py-3 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                    브랜드
+                  </th>
+                  {ACTIVE_PLATFORMS.map((platform) => (
+                    <th key={platform} className="border-b border-outline-variant px-container-padding py-3 text-center">
+                      <PlatformChip platform={platform} withIcon />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant">
+                {matrix.slice(0, 8).map((row) => (
+                  <tr key={row.slug} className="transition-colors hover:bg-surface-dim/30">
+                    <td className="px-container-padding py-3">
+                      <Link to={`/trends?brand=${row.slug}&platform=all`} className="flex items-center gap-3">
+                        <BrandLogo slug={row.slug} name={row.brand} className="h-8 w-8 shrink-0" />
+                        <span className="font-body-sm text-body-sm font-semibold">{row.brand}</span>
+                      </Link>
+                    </td>
+                    {row.platforms.map((cell) => (
+                      <td key={cell.platform} className="px-container-padding py-3">
+                        <div className="mx-auto max-w-[132px] rounded border border-outline-variant/70 bg-surface-container-lowest p-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-label-muted text-[10px] text-on-surface-variant">팔로워</span>
+                            <span className="font-body-sm text-body-sm tabular-nums">{cell.followers != null ? shortNumber(cell.followers) : "—"}</span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <span className="font-label-muted text-[10px] text-on-surface-variant">게시/광고</span>
+                            <span className="font-body-sm text-body-sm tabular-nums">{cell.posts}/{cell.activeAds}</span>
+                          </div>
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-container-padding">
+          <div className="mb-4">
+            <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Priority alerts</span>
+            <h3 className="mt-1 font-headline-sm text-headline-sm">오늘 볼 변화</h3>
+          </div>
+          <div className="space-y-3">
+            {alerts.length === 0 && <p className="font-body-sm text-body-sm text-on-surface-variant">현재 우선 확인할 알림이 없습니다.</p>}
+            {alerts.map((alert) => (
+              <Link key={alert.id} to={alert.linkTo} className="flex gap-3 rounded border border-outline-variant/70 bg-surface-container-lowest p-3 transition-colors hover:border-primary/40">
+                <span className={`material-symbols-outlined notranslate text-[20px] ${alert.severity === "high" ? "text-rose-600" : alert.severity === "medium" ? "text-primary" : "text-on-surface-variant"}`}>
+                  {alert.icon}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-body-sm text-body-sm font-semibold">{alert.title}</span>
+                  <span className="mt-0.5 block line-clamp-2 font-label-muted text-label-muted text-on-surface-variant">{alert.detail}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader title="데이터 품질 상태" />
+        <div className="grid grid-cols-1 divide-y divide-outline-variant md:grid-cols-4 md:divide-x md:divide-y-0">
+          {dataQuality.map((q) => (
+            <div key={q.platform} className="p-4 sm:p-container-padding">
+              <div className="mb-3 flex items-center justify-between">
+                <PlatformChip platform={q.platform} withIcon />
+                <span className={`rounded px-2 py-1 font-label-caps text-[10px] ${
+                  q.status === "fresh"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : q.status === "stale"
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-rose-50 text-rose-700"
+                }`}>
+                  {q.status}
+                </span>
+              </div>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">{q.message}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <MiniQuality label="계정" value={String(q.accounts)} />
+                <MiniQuality label="최근 수집" value={q.lastRun ?? "—"} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
         {/* 최근 변경 (타입별 이벤트) */}
@@ -236,4 +350,19 @@ function metricWidth(value: string) {
   const n = Number(value.replace(/[^0-9.-]/g, ""));
   if (!Number.isFinite(n) || n <= 0) return 8;
   return Math.max(12, Math.min(100, n * 12));
+}
+
+function shortNumber(value: number) {
+  if (value >= 1_000_000) return `${Math.round(value / 100_000) / 10}M`;
+  if (value >= 1_000) return `${Math.round(value / 100) / 10}K`;
+  return value.toLocaleString();
+}
+
+function MiniQuality({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded bg-surface-container-low p-2">
+      <p className="font-label-muted text-[10px] text-on-surface-variant">{label}</p>
+      <p className="mt-1 truncate font-body-sm text-body-sm font-semibold tabular-nums">{value}</p>
+    </div>
+  );
 }
