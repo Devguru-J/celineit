@@ -8,8 +8,12 @@ import {
 import { pick, str, type AccountInput, type PlatformAdapter } from "./types";
 
 // TikTok Ad Library 스크래퍼.
-// 입력: region + 광고주/키워드 검색. 출력: 광고별 텍스트/영상/커버/랜딩/게재일.
-// 실제 actor 출력 필드명은 실수집 검증 단계(Task 4)에서 대조·보정한다(방어적 파싱).
+// ⚠️ DORMANT (ACTIVE_PLATFORMS 에서 제외됨). TikTok Ad Library 는 EEA 한정이라 일본 광고가 없음(2026-07-04 실측).
+//    일본 TikTok 은 오가닉 tiktok 어댑터로 수집한다. 이 어댑터는 EEA 확장 시에만 사용.
+// ⚠️ 아래 buildInput/normalize 는 합성 fixture 기준이며 실제 actor(ivanvs~tiktok-ad-library-scraper) 출력과
+//    미대조 상태. 실제 입력은 {maxRecords, urls:[{url:"https://library.tiktok.com/ads?region=..&adv_name=.."}]},
+//    출력은 {id, firstShownDate/lastShownDate, videos[].videoUrl, imageUrls[], advertiser{...}} 형태.
+//    EEA 착수 시 이 매핑부터 보정할 것. 근거: docs/superpowers/specs/2026-07-04-x-ads-feasibility.md
 export const tiktokAdsAdapter: PlatformAdapter = {
   platform: "tiktok_ads",
   defaultActor: "ivanvs~tiktok-ad-library-scraper",

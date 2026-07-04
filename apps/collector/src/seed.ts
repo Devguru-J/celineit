@@ -19,7 +19,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "anua",
     accounts: [
       { platform: "instagram", handle: "@anua.jp" }, // Anua JAPAN OFFICIAL
-      { platform: "tiktok_ads", handle: "Anua" }, // TikTok Ad Library 광고주 검색어
+      { platform: "tiktok", handle: "@anua.jp" }, // TikTok 오가닉 (핸들 실측 검증 2026-07-04)
     ],
   },
   {
@@ -27,7 +27,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "vt-cosmetics",
     accounts: [
       { platform: "instagram", handle: "@vtcosmetics_japan" }, // VT JAPAN OFFICIAL
-      { platform: "tiktok_ads", handle: "VT Cosmetics" },
+      { platform: "tiktok", handle: "@vtcosmetics_jp_official" }, // TikTok 오가닉 (실측 검증)
     ],
   },
   {
@@ -35,7 +35,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "medicube",
     accounts: [
       { platform: "instagram", handle: "@medicube_officialjapan" }, // メディキューブ 公式
-      { platform: "tiktok_ads", handle: "medicube" },
+      { platform: "tiktok", handle: "@medicube_japan" }, // TikTok 오가닉 (실측 검증)
     ],
   },
   {
@@ -43,7 +43,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "manyo",
     accounts: [
       { platform: "instagram", handle: "@manyo.japan" }, // manyo 日本公式
-      { platform: "tiktok_ads", handle: "manyo" },
+      { platform: "tiktok", handle: "@manyo.japan" }, // TikTok 오가닉 (실측 검증)
     ],
   },
   {
@@ -51,7 +51,7 @@ const SEED_BRANDS: SeedBrand[] = [
     slug: "aestura",
     accounts: [
       { platform: "instagram", handle: "@aestura_jp" }, // AESTURA JAPAN Official
-      { platform: "tiktok_ads", handle: "aestura" },
+      // TikTok 제외: 일본 공식 TikTok 계정 없음(2026-07-04 후보 핸들 전부 미존재 확인).
     ],
   },
 ];

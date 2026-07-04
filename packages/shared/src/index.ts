@@ -4,7 +4,10 @@ export const PLATFORMS = ["meta_ads", "instagram", "twitter", "tiktok", "tiktok_
 export type Platform = (typeof PLATFORMS)[number];
 
 // 실수집 대상 매체 — 여기가 "원하는 매체" 단일 설정 지점.
-export const ACTIVE_PLATFORMS: Platform[] = ["meta_ads", "instagram", "twitter", "tiktok", "tiktok_ads"];
+// tiktok_ads 는 제외: TikTok Ad Library 는 EEA 한정이라 일본 광고가 없음(2026-07-04 실측).
+//   → 일본 TikTok 경쟁정보는 오가닉 tiktok(게시글)로 수집. tiktok_ads 키/어댑터는 EEA 확장 대비 dormant.
+//   근거: docs/superpowers/specs/2026-07-04-x-ads-feasibility.md
+export const ACTIVE_PLATFORMS: Platform[] = ["meta_ads", "instagram", "twitter", "tiktok"];
 
 // 수집 대상 국가 — "원하는 국가" 단일 설정 지점. Meta Ad Library country 파라미터 등에 사용.
 // 전체 지역을 원하면 "ALL" 로 변경.

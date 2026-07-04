@@ -2,6 +2,8 @@
 // 구조는 계획된 Drizzle 스키마(brands / accounts / ads / posts / metrics / runs)를 따르므로
 // 추후 실제 loader 연결 시 최소 변경으로 교체 가능.
 
+// DB(@celine/shared) platform enum 과 일치. tiktok_ads 는 dormant(수집·필터 제외)지만
+// enum 값이라 타입 완전성 위해 유지. 근거: docs/superpowers/specs/2026-07-04-x-ads-feasibility.md
 export type Platform = "meta_ads" | "instagram" | "twitter" | "tiktok" | "tiktok_ads";
 
 export const PLATFORM_META: Record<
@@ -12,7 +14,7 @@ export const PLATFORM_META: Record<
   instagram: { label: "인스타그램", short: "IG", icon: "photo_camera", dot: "bg-[#E1306C]" },
   twitter: { label: "트위터 / X", short: "X", icon: "tag", dot: "bg-[#111111]" },
   tiktok: { label: "틱톡", short: "TikTok", icon: "music_note", dot: "bg-[#00BFA5]" },
-  tiktok_ads: { label: "틱톡 광고", short: "TikTok Ads", icon: "ad_units", dot: "bg-[#000000]" },
+  tiktok_ads: { label: "틱톡 광고", short: "TikTok Ads", icon: "ad_units", dot: "bg-[#000000]" }, // dormant(EEA 전용)
 };
 
 export const brands = [
