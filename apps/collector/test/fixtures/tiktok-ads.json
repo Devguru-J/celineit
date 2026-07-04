@@ -1,0 +1,25 @@
+[
+  {
+    "id": "tt-ad-0001",
+    "advertiser_name": "Anua Japan",
+    "ad_text": "毛穴ケアはこれ一本。ドクダミトナー新登場。",
+    "video_url": "https://p16-ad.tiktokcdn.com/anua-0001.mp4",
+    "cover_image_url": "https://p16-ad.tiktokcdn.com/anua-0001-cover.jpg",
+    "landing_page_url": "https://anua.jp/products/heartleaf-toner?utm_source=tiktok",
+    "first_shown_date": "2026-06-01",
+    "last_shown_date": "2026-06-28",
+    "is_active": true,
+    "unique_users_seen": "100k-1M"
+  },
+  {
+    "id": "tt-ad-0002",
+    "advertiser_name": "Anua Japan",
+    "ad_text": "限定セール実施中",
+    "image_url": "https://p16-ad.tiktokcdn.com/anua-0002.jpg",
+    "link": "https://anua.jp/sale",
+    "start_date": "2026-05-20",
+    "end_date": "2026-06-10",
+    "is_active": false
+  },
+  {}
+]
