@@ -1,8 +1,32 @@
-# X(트위터) 광고 수집 타당성 Spike — go/no-go 메모
+# X + TikTok 광고 수집 타당성 Spike — go/no-go 메모
 
 - **작성일:** 2026-07-04
-- **범위:** 일본 K-뷰티 경쟁사 5개(Anua / VT Cosmetics / medicube / manyo / aestura)의 X 유료 광고를 meta_ads·tiktok_ads 와 동일 경로(수집→정규화→적재→웹)로 수집 가능한지.
-- **결론: NO-GO (현시점).** TikTok 광고 수집을 먼저 완결하고, X 는 아래 "재검토 트리거" 충족 시에만 착수.
+- **범위:** 일본 K-뷰티 경쟁사 5개(Anua / VT Cosmetics / medicube / manyo / aestura)의 유료 광고를 meta_ads 와 동일 경로(수집→정규화→적재→웹)로 수집 가능한지.
+- **결론: X 광고·TikTok 광고 둘 다 NO-GO (일본 대상).** 근본 원인 동일 — 두 플랫폼의 광고 투명성 라이브러리가 **EEA(EU) 한정**이라 일본 게재 광고가 존재하지 않음. 일본 유료광고는 **Meta Ad Library 가 유일한 소스.**
+
+## ⚠️ TikTok 광고 = EEA 한정 (2026-07-04 실측 확인)
+
+`ivanvs~tiktok-ad-library-scraper` actor 로 실제 소액 실행하여 확인:
+
+| region | adv_name | 결과 |
+|---|---|---|
+| JP | (없음, 넓게) | **0건** |
+| JP | Anua / medicube | **0건** |
+| DE (EEA) | (없음, 넓게) | 5건 |
+| DE (EEA) | Anua | 5건 (단, 반환된 광고주는 "Shopify (USA) Inc." — adv_name 필터 부정확) |
+
+- TikTok Ad Library(`library.tiktok.com`)는 사실상 **Commercial Content Library** = EEA DSA 대응. 일본 미포함.
+- actor 자체는 정상 동작하며 출력은 풍부(`id`, `firstShownDate`/`lastShownDate`{date,timestamp}, `videos[].videoUrl`, `imageUrls[]`, `estimatedAudience`, `impression`, `advertiser{name,advBizId,registryLocation}`, `targeting`). 단 EEA 게재 광고에 한함.
+- actor 입력은 플랜 가정과 다름: `{maxRecords, urls:[{url: "https://library.tiktok.com/ads?region=..&start_time=..&end_time=..&adv_name=..&sort_type=impression,desc"}]}`.
+- adv_name 필터 부정확 → 정확 특정하려면 `adv_biz_ids`(advBizId) 필요.
+
+**→ 일본 TikTok 경쟁정보는 "유료광고"가 아니라 "오가닉 게시글"로 수집한다.** 기존 오가닉 `tiktok` 어댑터(`clockworks~tiktok-scraper`, 글로벌 커버리지) 사용. `tiktok_ads` 스캐폴딩은 EEA 확장 시에만 의미.
+
+---
+
+## X 광고 (동일 결론)
+
+- **결론: NO-GO (현시점).**
 
 ---
 
