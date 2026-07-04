@@ -58,6 +58,14 @@ describe("twitter 어댑터", () => {
     expect(byId["1799000000000000002"].format).toBe("video");
     expect(byId["1799000000000000001"].metrics.shares).toBe(1500);
   });
+
+  it("문자열 배열 media 에서 URL 을 추출한다 (실 actor 형태)", () => {
+    const byId = Object.fromEntries(r.posts.map((p) => [p.platformPostId, p]));
+    // 여러 이미지 → carousel, mediaUrls 채워짐 (회귀 가드: media 가 문자열 배열)
+    expect(byId["1799000000000000001"].mediaUrls).toContain("https://pbs.twimg.com/media/tw1a.jpg");
+    expect(byId["1799000000000000001"].mediaUrls.length).toBe(2);
+    expect(byId["1799000000000000001"].format).toBe("carousel");
+  });
 });
 
 describe("tiktok 어댑터", () => {

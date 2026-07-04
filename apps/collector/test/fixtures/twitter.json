@@ -8,7 +8,8 @@
     "replyCount": 310,
     "retweetCount": 1500,
     "viewCount": 540000,
-    "media": [{ "type": "photo", "media_url_https": "https://pbs.example/tw1.jpg" }],
+    "media": ["https://pbs.twimg.com/media/tw1a.jpg", "https://pbs.twimg.com/media/tw1b.jpg"],
+    "extendedEntities": { "media": [{ "type": "photo", "media_url_https": "https://pbs.twimg.com/media/tw1a.jpg" }] },
     "author": { "userName": "ysl", "followers": 5200000 }
   },
   {
