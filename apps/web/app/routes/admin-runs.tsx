@@ -117,8 +117,12 @@ export default function AdminRuns() {
       [r.brand, r.platform, r.status, r.error ?? ""].some((v) => String(v).toLowerCase().includes(q)),
     );
   }, [query, runs]);
-  const runningRuns = useMemo(() => runs.filter((r) => r.status === "running").slice(0, 4), [runs]);
-  const recentProgressRuns = useMemo(() => runs.slice(0, 5), [runs]);
+  // 한 배치의 run 들은 started_at 이 거의 동일해, 상위 몇 개만 자르면 특정 플랫폼(삽입이 늦은
+  // meta_ads)만 보이는 착시가 생긴다. 카운트는 전체 running 으로, 목록은 전 플랫폼이 보이도록
+  // 넉넉히 노출하고 스크롤로 처리한다.
+  const runningAll = useMemo(() => runs.filter((r) => r.status === "running"), [runs]);
+  const runningRuns = useMemo(() => runningAll.slice(0, 24), [runningAll]);
+  const recentProgressRuns = useMemo(() => runs.slice(0, 12), [runs]);
   const latestRun = recentProgressRuns[0];
 
   useEffect(() => {
@@ -363,7 +367,7 @@ export default function AdminRuns() {
                   </div>
                   <div className="rounded bg-surface-container-low p-2">
                     <p className="font-label-muted text-[10px] text-on-surface-variant">진행 중</p>
-                    <p className="mt-1 font-body-md text-body-md font-semibold tabular-nums">{runningRuns.length}</p>
+                    <p className="mt-1 font-body-md text-body-md font-semibold tabular-nums">{runningAll.length}</p>
                   </div>
                   <div className="rounded bg-surface-container-low p-2">
                     <p className="font-label-muted text-[10px] text-on-surface-variant">최근 상태</p>
@@ -373,7 +377,7 @@ export default function AdminRuns() {
                   </div>
                 </div>
                 {runningRuns.length > 0 ? (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
                     {runningRuns.map((run) => (
                       <RunStatusRow key={run.id} run={run} emphasize />
                     ))}
@@ -388,9 +392,11 @@ export default function AdminRuns() {
                 {recentProgressRuns.length > 0 && (
                   <div className="mt-3 space-y-2 border-t border-outline-variant/70 pt-3">
                     <span className="font-label-muted text-[11px] text-on-surface-variant">최근 실행</span>
-                    {recentProgressRuns.slice(0, 3).map((run) => (
-                      <RunStatusRow key={run.id} run={run} />
-                    ))}
+                    <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                      {recentProgressRuns.map((run) => (
+                        <RunStatusRow key={run.id} run={run} />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
