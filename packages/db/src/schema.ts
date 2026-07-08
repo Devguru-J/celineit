@@ -219,6 +219,28 @@ export const contentTags = pgTable("content_tags", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ── 트렌드 뷰어 (Trend Radar) 구독 계정 ─────────────────
+// 릴스/X/스레드/틱톡 탭에서 모니터링할 외부 계정 목록. 사용자 간 공유(서버 저장).
+// 소스별 행이 0개면 코드의 기본 계정으로 시드된다(lib/radar/constants).
+
+export const trendAccountSourceEnum = pgEnum("trend_account_source", [
+  "reels",
+  "x",
+  "threads",
+  "tiktok",
+]);
+
+export const trendAccounts = pgTable(
+  "trend_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    source: trendAccountSourceEnum("source").notNull(),
+    username: text("username").notNull(), // X는 대소문자 보존, 그 외 소문자
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("trend_accounts_source_username_uniq").on(t.source, t.username)],
+);
+
 export const schema = {
   brands,
   brandAccounts,
@@ -232,4 +254,5 @@ export const schema = {
   comments,
   commentKeywords,
   contentTags,
+  trendAccounts,
 };

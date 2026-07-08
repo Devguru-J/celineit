@@ -5,6 +5,7 @@ const TITLES: Record<string, string> = {
   "/feed": "통합 피드",
   "/winning-ads": "위닝 광고",
   "/trends": "트렌드",
+  "/radar": "트렌드 뷰어",
   "/calendar": "포스팅 캘린더",
   "/brands": "브랜드",
   "/admin/runs": "수집 관리 · 실행 현황",

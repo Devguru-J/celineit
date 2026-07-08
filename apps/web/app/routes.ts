@@ -11,4 +11,13 @@ export default [
   route("item/:kind/:id", "routes/item.tsx"),
   route("img", "routes/img.tsx"),
   route("admin/runs", "routes/admin-runs.tsx"),
+  // 트렌드 뷰어 (Trend Radar): 페이지 + 플랫폼별 리소스 라우트
+  route("radar", "routes/radar.tsx"),
+  route("radar/api/videos", "routes/radar.api.videos.tsx"),
+  route("radar/api/ai", "routes/radar.api.ai.tsx"),
+  route("radar/api/reels", "routes/radar.api.reels.tsx"),
+  route("radar/api/x", "routes/radar.api.x.tsx"),
+  route("radar/api/threads", "routes/radar.api.threads.tsx"),
+  route("radar/api/tiktok", "routes/radar.api.tiktok.tsx"),
+  route("radar/api/accounts", "routes/radar.api.accounts.tsx"),
 ] satisfies RouteConfig;
