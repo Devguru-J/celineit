@@ -1,7 +1,13 @@
 // 틱톡 — tikwm 무료 공개 API(트렌딩 + 구독계정). 레퍼런스 tiktok 섹션 포팅.
-import { TIKWM_BASE, TIKTOK_REGION } from "./constants";
+import { TIKWM_BASE, TIKTOK_REGION, UA } from "./constants";
 import { num, str } from "./format";
 import { httpJson, safe } from "./http.server";
+import { proxyEnabled, proxyGetJson } from "./proxy.server";
+
+// 프록시 활성 시 프록시 경유, 아니면 직접 fetch (tikwm는 CF IP를 차단하므로 프록시 권장)
+function tikwmGet(url: string) {
+  return proxyEnabled() ? proxyGetJson<any>(url, { "User-Agent": UA }) : httpJson<any>(url);
+}
 
 export type TikTokPost = {
   account: string;
@@ -39,14 +45,14 @@ function toItem(v: any): TikTokPost {
 
 async function fetchTrending(): Promise<TikTokPost[]> {
   return safe(async () => {
-    const d = await httpJson<any>(`${TIKWM_BASE}/feed/list?region=${TIKTOK_REGION}&count=20`);
+    const d = await tikwmGet(`${TIKWM_BASE}/feed/list?region=${TIKTOK_REGION}&count=20`);
     return (d?.data ?? []).map(toItem);
   }, []);
 }
 
 async function fetchUser(handle: string): Promise<TikTokPost[]> {
   return safe(async () => {
-    const d = await httpJson<any>(
+    const d = await tikwmGet(
       `${TIKWM_BASE}/user/posts?unique_id=${encodeURIComponent(handle)}&count=12`,
     );
     return (d?.data?.videos ?? []).map(toItem);

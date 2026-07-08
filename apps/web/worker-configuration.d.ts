@@ -5,4 +5,5 @@ interface Env {
   COLLECTOR?: Fetcher;
   COLLECTOR_URL?: string;
   COLLECTOR_SECRET?: string;
+  WEBSHARE_API_KEY?: string;
 }
