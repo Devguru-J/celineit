@@ -7,6 +7,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/feed", icon: "rss_feed", label: "피드" },
   { to: "/winning-ads", icon: "star", label: "위닝 광고" },
   { to: "/trends", icon: "trending_up", label: "트렌드" },
+  { to: "/radar", icon: "radar", label: "트렌드 뷰어" },
   { to: "/calendar", icon: "calendar_month", label: "캘린더" },
   { to: "/brands", icon: "domain", label: "브랜드" },
   { to: "/admin/runs", icon: "settings_applications", label: "수집 관리" },

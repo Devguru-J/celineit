@@ -6,6 +6,9 @@ const ALLOWED = [
   /\.twimg\.com$/i,
   /tiktokcdn/i,
   /\.pstatp\.com$/i,
+  // 트렌드 뷰어(유튜브 썸네일·HF 이미지 등) 추가 허용
+  /\.ytimg\.com$/i,
+  /\.googleusercontent\.com$/i,
 ];
 
 export async function loader({ request }: { request: Request }) {
