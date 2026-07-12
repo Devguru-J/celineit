@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router";
 import { Card, CardHeader, PlatformChip } from "~/components/ui";
 import { BrandBanner, BrandLogo } from "~/lib/brand-assets";
-import type { Platform } from "~/mock/data";
+import type { Platform } from "~/lib/platform";
 import { getBrandsOverview } from "~/lib/queries.server";
 
 export function meta() {

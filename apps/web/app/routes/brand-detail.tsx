@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import { Card, PlatformChip } from "~/components/ui";
 import { FeedGrid } from "~/components/feed-card";
 import { BrandLogo } from "~/lib/brand-assets";
-import type { Platform } from "~/mock/data";
+import type { Platform } from "~/lib/platform";
 import { getBrandDetail } from "~/lib/queries.server";
 
 export function meta() {

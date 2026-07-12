@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLoaderData } from "react-router";
 import { BarChart, Card, CardHeader, LineChart, MediaImage, PlatformChip } from "~/components/ui";
 import { BrandLogo } from "~/lib/brand-assets";
-import { fmt, PLATFORM_META, type Platform } from "~/mock/data";
+import { fmt, PLATFORM_META, type Platform } from "~/lib/platform";
 import { getTrends } from "~/lib/queries.server";
 
 export function meta() {

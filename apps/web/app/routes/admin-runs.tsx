@@ -4,7 +4,7 @@ import { ACTIVE_PLATFORMS } from "@celine/shared";
 import { Card, CardHeader, KpiDelta, PlatformChip } from "~/components/ui";
 import { getCollector } from "~/lib/collector.server";
 import { getCollectableAccounts, getRuns, getRunStats } from "~/lib/queries.server";
-import type { Platform } from "~/mock/data";
+import type { Platform } from "~/lib/platform";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 수집 실행 현황" }];

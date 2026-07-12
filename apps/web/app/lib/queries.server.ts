@@ -89,44 +89,97 @@ async function mediaCountByOwner(ownerType: "ad" | "post", ownerIds: string[]) {
   return map;
 }
 
-export async function getFeed(): Promise<FeedItem[]> {
-  const db = getDb();
-  const postRows = await db
-    .select({
-      id: postsT.id,
-      brand: brandsT.name,
-      platform: brandAccounts.platform,
-      caption: postsT.caption,
-      format: postsT.format,
-      postedAt: postsT.postedAt,
-      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
-      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
-      views: sql<number | null>`max(${postMetricsDaily.views})`,
-    })
-    .from(postsT)
-    .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
-    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
-    .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
-    .groupBy(postsT.id, brandsT.name, brandAccounts.platform)
-    .orderBy(desc(postsT.postedAt))
-    .limit(120);
+export type FeedFilters = {
+  platform?: Platform | "all";
+  kind?: "all" | "ad" | "post";
+  brandSlug?: string | "all";
+  formats?: ("image" | "video" | "carousel")[];
+  sinceDays?: number | null; // 7 | 30 | 90 (JST 기준)
+  limit?: number; // 게시물 상한 (광고는 절반)
+};
 
-  const adRows = await db
-    .select({
-      id: adsT.id,
-      brand: brandsT.name,
-      adCopy: adsT.adCopy,
-      format: adsT.format,
-      lastSeen: adsT.lastSeen,
-      daysActive: adsT.daysActive,
-      plat: brandAccounts.platform,
-    })
-    .from(adsT)
-    .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
-    .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
-    .where(eq(adsT.isActive, true))
-    .orderBy(desc(adsT.daysActive))
-    .limit(60);
+// 필터 옵션용 브랜드 목록 (slug 기준 서버측 필터에 사용)
+export async function getBrandOptions() {
+  const db = getDb();
+  return db.select({ name: brandsT.name, slug: brandsT.slug }).from(brandsT).orderBy(brandsT.name);
+}
+
+// 필터는 서버측에서 적용한다 — 상위 N건을 먼저 자르고 클라이언트에서 거르면
+// 조건에 맞는 데이터가 있어도 잘려나가 "없음"으로 보인다.
+export async function getFeed(
+  filters: FeedFilters = {},
+): Promise<{ items: FeedItem[]; hasMore: boolean }> {
+  const db = getDb();
+  const platform = filters.platform ?? "all";
+  const kind = filters.kind ?? "all";
+  const brandSlug = filters.brandSlug ?? "all";
+  const formats = filters.formats ?? [];
+  const postLimit = Math.min(600, Math.max(1, Math.floor(filters.limit ?? 120)));
+  const adLimit = Math.max(1, Math.ceil(postLimit / 2));
+
+  // 게시물은 오가닉 플랫폼, 광고는 광고 플랫폼(meta_ads/tiktok_ads)에만 존재한다.
+  const wantPosts = kind !== "ad" && platform !== "meta_ads" && platform !== "tiktok_ads";
+  const wantAds =
+    kind !== "post" && (platform === "all" || platform === "meta_ads" || platform === "tiktok_ads");
+
+  const sinceUtc = filters.sinceDays ? jstDayStartUtc(-filters.sinceDays) : null;
+
+  const postRows = !wantPosts
+    ? []
+    : await db
+        .select({
+          id: postsT.id,
+          brand: brandsT.name,
+          platform: brandAccounts.platform,
+          caption: postsT.caption,
+          format: postsT.format,
+          postedAt: postsT.postedAt,
+          likes: sql<number | null>`max(${postMetricsDaily.likes})::float8`,
+          comments: sql<number | null>`max(${postMetricsDaily.comments})::float8`,
+          views: sql<number | null>`max(${postMetricsDaily.views})::float8`,
+        })
+        .from(postsT)
+        .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
+        .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+        .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
+        .where(
+          and(
+            ...(platform !== "all" ? [eq(brandAccounts.platform, platform)] : []),
+            ...(brandSlug !== "all" ? [eq(brandsT.slug, brandSlug)] : []),
+            ...(formats.length ? [inArray(postsT.format, formats)] : []),
+            ...(sinceUtc ? [gte(postsT.postedAt, sinceUtc)] : []),
+          ),
+        )
+        .groupBy(postsT.id, brandsT.name, brandAccounts.platform)
+        .orderBy(desc(postsT.postedAt))
+        .limit(postLimit);
+
+  const adRows = !wantAds
+    ? []
+    : await db
+        .select({
+          id: adsT.id,
+          brand: brandsT.name,
+          adCopy: adsT.adCopy,
+          format: adsT.format,
+          lastSeen: adsT.lastSeen,
+          daysActive: adsT.daysActive,
+          plat: brandAccounts.platform,
+        })
+        .from(adsT)
+        .innerJoin(brandAccounts, eq(adsT.brandAccountId, brandAccounts.id))
+        .innerJoin(brandsT, eq(brandAccounts.brandId, brandsT.id))
+        .where(
+          and(
+            eq(adsT.isActive, true),
+            ...(platform !== "all" ? [eq(brandAccounts.platform, platform)] : []),
+            ...(brandSlug !== "all" ? [eq(brandsT.slug, brandSlug)] : []),
+            ...(formats.length ? [inArray(adsT.format, formats)] : []),
+            ...(sinceUtc ? [gte(adsT.lastSeen, jstDateStr(sinceUtc))] : []),
+          ),
+        )
+        .orderBy(desc(adsT.daysActive))
+        .limit(adLimit);
 
   const postMedia = await firstMediaByOwner("post", postRows.map((p) => p.id));
   const adMedia = await firstMediaByOwner("ad", adRows.map((a) => a.id));
@@ -162,7 +215,9 @@ export async function getFeed(): Promise<FeedItem[]> {
     })),
   ];
   items.sort((x, y) => (x.date ?? "") < (y.date ?? "") ? 1 : -1);
-  return items;
+  // 어느 쪽이든 상한까지 꽉 찼으면 더 있을 수 있다("더 보기" 노출 기준).
+  const hasMore = postRows.length === postLimit || adRows.length === adLimit;
+  return { items, hasMore };
 }
 
 export async function getWinningAds() {
@@ -249,9 +304,9 @@ export async function getBrandDetail(slug: string) {
       caption: postsT.caption,
       format: postsT.format,
       postedAt: postsT.postedAt,
-      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
-      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
-      views: sql<number | null>`max(${postMetricsDaily.views})`,
+      likes: sql<number | null>`max(${postMetricsDaily.likes})::float8`,
+      comments: sql<number | null>`max(${postMetricsDaily.comments})::float8`,
+      views: sql<number | null>`max(${postMetricsDaily.views})::float8`,
     })
     .from(postsT)
     .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
@@ -564,7 +619,7 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
   const perPostEng = db
     .select({
       postId: postMetricsDaily.postId,
-      eng: sql<number>`max(coalesce(${postMetricsDaily.likes}, 0) + coalesce(${postMetricsDaily.comments}, 0) + coalesce(${postMetricsDaily.views}, 0))`.as("eng"),
+      eng: sql<number>`max(coalesce(${postMetricsDaily.likes}, 0) + coalesce(${postMetricsDaily.comments}, 0) + coalesce(${postMetricsDaily.views}, 0))::float8`.as("eng"),
     })
     .from(postMetricsDaily)
     .groupBy(postMetricsDaily.postId)
@@ -585,7 +640,8 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
       .select({
         accountId: postsT.brandAccountId,
         posts: sql<number>`count(${postsT.id})::int`,
-        engagement: sql<number>`coalesce(sum(${perPostEng.eng}), 0)::int`,
+        // ::int 는 브랜드 합산이 21.4억을 넘으면 overflow → float8(정수 2^53 까지 정확)
+        engagement: sql<number>`coalesce(sum(${perPostEng.eng}), 0)::float8`,
       })
       .from(postsT)
       .leftJoin(perPostEng, eq(perPostEng.postId, postsT.id))
@@ -879,9 +935,9 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
       caption: postsT.caption,
       format: postsT.format,
       postedAt: postsT.postedAt,
-      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
-      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
-      views: sql<number | null>`max(${postMetricsDaily.views})`,
+      likes: sql<number | null>`max(${postMetricsDaily.likes})::float8`,
+      comments: sql<number | null>`max(${postMetricsDaily.comments})::float8`,
+      views: sql<number | null>`max(${postMetricsDaily.views})::float8`,
     })
     .from(postsT)
     .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
@@ -895,9 +951,9 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
       id: postsT.id,
       accountId: postsT.brandAccountId,
       platform: brandAccounts.platform,
-      likes: sql<number | null>`max(${postMetricsDaily.likes})`,
-      comments: sql<number | null>`max(${postMetricsDaily.comments})`,
-      views: sql<number | null>`max(${postMetricsDaily.views})`,
+      likes: sql<number | null>`max(${postMetricsDaily.likes})::float8`,
+      comments: sql<number | null>`max(${postMetricsDaily.comments})::float8`,
+      views: sql<number | null>`max(${postMetricsDaily.views})::float8`,
     })
     .from(postsT)
     .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))

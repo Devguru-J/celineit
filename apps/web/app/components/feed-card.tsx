@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { MediaImage } from "~/components/ui";
-import { PLATFORM_META, fmt } from "~/mock/data";
+import { PLATFORM_META, fmt } from "~/lib/platform";
 import type { FeedItem } from "~/lib/queries.server";
 
 // 이미지 위 좌상단 오버레이 배지 (플랫폼 + 광고/게시물) — Stitch 디자인.

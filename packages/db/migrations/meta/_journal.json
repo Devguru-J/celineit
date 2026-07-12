@@ -43,6 +43,13 @@
       "when": 1783829981299,
       "tag": "0005_add_hot_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783831316242,
+      "tag": "0006_metrics_bigint",
+      "breakpoints": true
     }
   ]
 }

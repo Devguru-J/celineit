@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 import { Card, CardHeader, LineChart, MediaImage, MediaVideo, PlatformChip } from "~/components/ui";
-import { fmt } from "~/mock/data";
+import { fmt } from "~/lib/platform";
 import { getItemDetail, getSimilarPosts } from "~/lib/queries.server";
 
 export function meta() {

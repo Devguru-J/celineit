@@ -1,4 +1,4 @@
-import { PLATFORM_META, type Platform } from "~/mock/data";
+import { PLATFORM_META, type Platform } from "~/lib/platform";
 
 // Small platform chip used across feed / winning ads / timeline.
 export function PlatformChip({ platform, withIcon = false }: { platform: Platform; withIcon?: boolean }) {

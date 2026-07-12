@@ -4,6 +4,7 @@ import { createRequestHandler } from "react-router";
 import { runWithCollector } from "../app/lib/collector.server";
 import { runWithDb } from "../app/lib/db.server";
 import { runWithWebshare } from "../app/lib/radar/proxy.server";
+import { accessGate } from "./access-gate";
 
 const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
@@ -12,6 +13,10 @@ const requestHandler = createRequestHandler(
 
 export default {
   async fetch(request, env) {
+    // 접근 코드 게이트(SITE_ACCESS_CODE 설정 시). RR 핸들러보다 먼저 — 미인증 요청은
+    // DB 컨텍스트도 열지 않고 끊는다.
+    const gate = await accessGate(request, env);
+    if (gate) return gate;
     // DB 와 수집기 바인딩을 요청 컨텍스트(AsyncLocalStorage)로 전달.
     // Service Binding(COLLECTOR)은 string 이 아니라 process.env 로는 못 읽으므로 여기서 넘긴다.
     return runWithDb(env.HYPERDRIVE.connectionString, () =>

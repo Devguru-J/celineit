@@ -1,6 +1,6 @@
 import { useLoaderData } from "react-router";
 import { Card, CardHeader } from "~/components/ui";
-import { PLATFORM_META } from "~/mock/data";
+import { PLATFORM_META } from "~/lib/platform";
 import { getCalendar } from "~/lib/queries.server";
 
 export function meta() {

@@ -3,6 +3,7 @@
 
 import { desc } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   date,
   doublePrecision,
@@ -173,7 +174,8 @@ export const accountMetricsDaily = pgTable(
       .notNull()
       .references(() => brandAccounts.id, { onDelete: "cascade" }),
     date: date("date").notNull(),
-    followers: integer("followers"),
+    // 팔로워는 integer(21.4억) 상한을 넘을 수 있어 bigint. mode:"number"라 JS 쪽은 number 그대로.
+    followers: bigint("followers", { mode: "number" }),
     following: integer("following"),
     postsCount: integer("posts_count"),
     engagementRate30d: doublePrecision("engagement_rate_30d"),
@@ -188,11 +190,14 @@ export const postMetricsDaily = pgTable(
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     date: date("date").notNull(),
-    likes: integer("likes"),
-    comments: integer("comments"),
-    views: integer("views"),
-    shares: integer("shares"),
-    saves: integer("saves"),
+    // 바이럴 영상 조회수는 integer(21.4억)를 넘겨 인제스트가 하드 실패할 수 있어 bigint.
+    // ⚠️ raw sql`max()/sum()` 으로 집계할 땐 ::float8 캐스트 필수 — postgres.js 가
+    // int8 을 string 으로 반환해 산술이 문자열 결합으로 깨진다.
+    likes: bigint("likes", { mode: "number" }),
+    comments: bigint("comments", { mode: "number" }),
+    views: bigint("views", { mode: "number" }),
+    shares: bigint("shares", { mode: "number" }),
+    saves: bigint("saves", { mode: "number" }),
   },
   (t) => [primaryKey({ columns: [t.postId, t.date] })],
 );
