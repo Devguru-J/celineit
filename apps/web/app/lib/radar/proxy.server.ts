@@ -3,7 +3,6 @@
 // 인스타/틱톡이 CF 데이터센터 IP를 차단하는 문제를 우회(주거용/타지역 IP 경유)한다.
 import { AsyncLocalStorage } from "node:async_hooks";
 import { connect } from "cloudflare:sockets";
-import { cached } from "./http.server";
 
 // ── Webshare API 키 컨텍스트 (collector.server 패턴 동일) ──
 const keyContext = new AsyncLocalStorage<string | undefined>();
@@ -20,21 +19,26 @@ export function proxyEnabled(): boolean {
 
 type Proxy = { host: string; port: number; user: string; pass: string };
 
+// 프록시 목록(자격증명 포함)은 절대 Cache API 에 저장하지 않는다 — 엣지 공유 캐시에
+// user/pass 평문이 남는다. isolate 메모리에만 짧게 들고 만료되면 다시 받아온다.
+const PROXY_LIST_TTL_MS = 10 * 60 * 1000;
+let proxyListCache: { proxies: Proxy[]; expiresAt: number } | null = null;
+
 async function getProxies(): Promise<Proxy[]> {
   const key = getKey();
   if (!key) return [];
-  const { data } = await cached("webshare:proxies", false, async () => {
-    const res = await fetch(
-      "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct&page=1&page_size=25",
-      { headers: { Authorization: `Token ${key}` } },
-    );
-    if (!res.ok) throw new Error(`webshare list ${res.status}`);
-    const j: any = await res.json();
-    return (j.results ?? [])
-      .filter((p: any) => p.valid)
-      .map((p: any) => ({ host: p.proxy_address, port: p.port, user: p.username, pass: p.password }));
-  });
-  return data;
+  if (proxyListCache && proxyListCache.expiresAt > Date.now()) return proxyListCache.proxies;
+  const res = await fetch(
+    "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct&page=1&page_size=25",
+    { headers: { Authorization: `Token ${key}` } },
+  );
+  if (!res.ok) throw new Error(`webshare list ${res.status}`);
+  const j: any = await res.json();
+  const proxies: Proxy[] = (j.results ?? [])
+    .filter((p: any) => p.valid)
+    .map((p: any) => ({ host: p.proxy_address, port: p.port, user: p.username, pass: p.password }));
+  if (proxies.length) proxyListCache = { proxies, expiresAt: Date.now() + PROXY_LIST_TTL_MS };
+  return proxies;
 }
 
 // ── HTTP 응답 파서 유틸 ──────────────────────────────
@@ -100,17 +104,32 @@ async function readResponse(reader: ReadableStreamDefaultReader<Uint8Array>): Pr
       }
     }
     if (headerEnd >= 0 && contentLength >= 0 && size - bodyStart >= contentLength) break;
-    if (headerEnd >= 0 && chunked && endsWithZeroChunk(concat(chunks), bodyStart)) break;
+    // 종료 청크 판정은 마지막 5바이트만 보면 되므로 매 read 마다 전체 버퍼를
+    // 재결합(O(n²))하지 않고 청크 배열의 꼬리에서만 읽는다.
+    if (headerEnd >= 0 && chunked && size - bodyStart >= 5 && endsWithZeroChunk(lastBytes(chunks, 5))) break;
     if (done) break;
   }
   return concat(chunks);
 }
 
-// chunked 본문이 종료 청크("0\r\n\r\n")로 끝났는지
-function endsWithZeroChunk(buf: Uint8Array, bodyStart: number): boolean {
-  if (buf.length - bodyStart < 5) return false;
-  const tail = buf.slice(buf.length - 5);
-  return tail[0] === 48 && tail[1] === 13 && tail[2] === 10 && tail[3] === 13 && tail[4] === 10;
+// 청크 배열의 마지막 n바이트 (전체 재결합 없이)
+function lastBytes(chunks: Uint8Array[], n: number): Uint8Array {
+  const out = new Uint8Array(n);
+  let need = n;
+  let pos = n;
+  for (let i = chunks.length - 1; i >= 0 && need > 0; i--) {
+    const c = chunks[i];
+    const take = Math.min(need, c.length);
+    pos -= take;
+    out.set(c.subarray(c.length - take), pos);
+    need -= take;
+  }
+  return out.subarray(pos);
+}
+
+// chunked 본문이 종료 청크("0\r\n\r\n")로 끝났는지 (인자: 마지막 5바이트)
+function endsWithZeroChunk(tail: Uint8Array): boolean {
+  return tail.length === 5 && tail[0] === 48 && tail[1] === 13 && tail[2] === 10 && tail[3] === 13 && tail[4] === 10;
 }
 
 function dechunk(body: Uint8Array): Uint8Array {

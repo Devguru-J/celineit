@@ -61,6 +61,25 @@ export async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+// 동시 실행 상한이 있는 map. 무제한 Promise.all 은 Worker 의 요청당 서브리퀘스트
+// 한도(무료 플랜 50)를 넘기거나 대상 사이트의 rate-limit 을 유발한다.
+// (레퍼런스 구현의 ThreadPoolExecutor(max_workers=N)에 대응)
+export async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    for (let i = next++; i < items.length; i = next++) {
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 // ── Cloudflare Cache API 기반 1시간 캐시 ────────────────────────
 // key: 안정적인 문자열(계정목록/필터 반영). force=true면 캐시 우회 후 갱신.
 // 반환: { data, fetchedAt(초) }. Cache API가 없는 환경(로컬 dev 등)에선 매번 fetch.
@@ -77,10 +96,15 @@ function cacheStore(): Cache | null {
   }
 }
 
+// 빈 결과(스크레이핑 실패가 safe() 로 [] 가 된 경우 포함)를 1시간 캐시하면
+// 일시 장애가 1시간짜리 빈 화면으로 굳는다 → 짧은 TTL 로만 캐시해 곧 재시도되게 한다.
+const EMPTY_CACHE_TTL = 120;
+
 export async function cached<T>(
   key: string,
   force: boolean,
   fetchFn: () => Promise<T>,
+  opts: { isEmpty?: (data: T) => boolean } = {},
 ): Promise<Cached<T>> {
   const store = cacheStore();
   // https 스킴의 안정 키(실제 네트워크 요청은 아님)
@@ -96,12 +120,14 @@ export async function cached<T>(
 
   const data = await fetchFn();
   const payload: Cached<T> = { data, fetchedAt: Math.floor(Date.now() / 1000) };
+  const isEmpty = opts.isEmpty ?? ((d: T) => Array.isArray(d) && d.length === 0);
 
   if (store) {
+    const ttl = isEmpty(data) ? EMPTY_CACHE_TTL : CACHE_TTL;
     const res = new Response(JSON.stringify(payload), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${CACHE_TTL}`,
+        "Cache-Control": `public, max-age=${ttl}`,
       },
     });
     // waitUntil 없이도 put은 진행됨(엣지에서 백그라운드 처리).

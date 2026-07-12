@@ -186,11 +186,21 @@ export default function Radar({ loaderData }: { loaderData: { categories: string
     action: "add" | "remove",
     username: string,
   ) => {
-    await fetch("/radar/api/accounts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source, action, username }),
-    });
+    try {
+      const res = await fetch("/radar/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source, action, username }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        alert(`계정 ${action === "add" ? "추가" : "삭제"} 실패: ${body?.error ?? `HTTP ${res.status}`}`);
+        return;
+      }
+    } catch {
+      alert("계정 변경 요청에 실패했습니다. 네트워크를 확인해 주세요.");
+      return;
+    }
     loadTab(source, true);
   };
 

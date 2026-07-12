@@ -6,7 +6,7 @@ import {
   PERIOD_CODE,
   PERIOD_EXCLUDE,
 } from "./constants";
-import { postJson, httpRaw, safe } from "./http.server";
+import { postJson, httpRaw, mapLimit, safe } from "./http.server";
 
 export type YtVideo = {
   id: string;
@@ -105,11 +105,13 @@ async function ytLikeCount(videoId: string): Promise<number> {
   }, 0);
 }
 
-// 좋아요를 병렬로 보강(이미 채워진 항목/상위 limit개만)
+// 좋아요를 병렬로 보강(이미 채워진 항목/상위 limit개만).
+// 동시 12개 제한(레퍼런스 max_workers=12): 무제한이면 검색 6 + next 45 = 51 서브리퀘스트로
+// Worker 무료 플랜 한도(50)를 초과하고 YouTube rate-limit 도 유발한다.
 async function enrichLikes(videos: YtVideo[], limit = 45): Promise<void> {
   const todo = videos.slice(0, limit).filter((v) => v.likes === undefined);
   if (!todo.length) return;
-  const counts = await Promise.all(todo.map((v) => ytLikeCount(v.id)));
+  const counts = await mapLimit(todo, 12, (v) => ytLikeCount(v.id));
   todo.forEach((v, i) => (v.likes = counts[i]));
 }
 

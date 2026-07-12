@@ -23,7 +23,10 @@ export const tiktokAdapter: PlatformAdapter = {
       const platformPostId = str(pick(item, "id", "videoId", "awemeId"));
       if (!platformPostId) continue;
 
-      const cover = str(pick(pick(item, "videoMeta"), "coverUrl")) ?? str(pick(item, "covers"));
+      // covers 는 보통 문자열 배열이라 str() 이 그냥 버린다 → 첫 요소를 꺼내 폴백한다.
+      const covers = pick(item, "covers");
+      const coverFallback = Array.isArray(covers) ? str(covers[0]) : str(covers);
+      const cover = str(pick(pick(item, "videoMeta"), "coverUrl")) ?? coverFallback;
       const mediaUrls = cover ? [cover] : [];
 
       const authorMeta = pick(item, "authorMeta", "author");
@@ -32,7 +35,7 @@ export const tiktokAdapter: PlatformAdapter = {
         caption: str(pick(item, "text", "desc", "description")) ?? null,
         format: "video",
         permalink: str(pick(item, "webVideoUrl", "url")) ?? null,
-        postedAt: tiktokDate(pick(item, "createTimeISO", "createTime", "createTimeISO")),
+        postedAt: tiktokDate(pick(item, "createTimeISO", "createTime")),
         mediaUrls,
         metrics: {
           likes: num(pick(item, "diggCount", "likes")),

@@ -19,12 +19,17 @@ export async function action({ request }: { request: Request }) {
     return Response.json({ error: "unknown source" }, { status: 400 });
   }
   const username = body.username ?? "";
-  const accounts =
-    body.action === "add"
-      ? await addAccount(source, username)
-      : body.action === "remove"
-        ? await removeAccount(source, username)
-        : null;
-  if (accounts === null) return Response.json({ error: "unknown action" }, { status: 400 });
-  return Response.json({ accounts });
+  try {
+    const accounts =
+      body.action === "add"
+        ? await addAccount(source, username)
+        : body.action === "remove"
+          ? await removeAccount(source, username)
+          : null;
+    if (accounts === null) return Response.json({ error: "unknown action" }, { status: 400 });
+    return Response.json({ accounts });
+  } catch (err) {
+    // addAccount 의 검증 실패(잘못된 사용자명/상한 초과)를 클라이언트에 전달
+    return Response.json({ error: err instanceof Error ? err.message : "요청 실패" }, { status: 400 });
+  }
 }

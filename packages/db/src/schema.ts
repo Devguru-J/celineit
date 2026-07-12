@@ -1,10 +1,12 @@
 // Celine Intelligence — Drizzle 스키마 (스펙 §4 데이터 모델).
 // 엔티티(잘 안 변함, upsert)와 스냅샷(매일 append, 시계열)을 분리한다.
 
+import { desc } from "drizzle-orm";
 import {
   boolean,
   date,
   doublePrecision,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -57,19 +59,30 @@ export const brandAccounts = pgTable(
   (t) => [uniqueIndex("brand_accounts_brand_platform_handle_uniq").on(t.brandId, t.platform, t.handle)],
 );
 
-export const collectionRuns = pgTable("collection_runs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  brandAccountId: uuid("brand_account_id")
-    .notNull()
-    .references(() => brandAccounts.id, { onDelete: "cascade" }),
-  platform: platformEnum("platform").notNull(),
-  apifyRunId: text("apify_run_id"),
-  status: runStatusEnum("status").notNull().default("running"),
-  itemCount: integer("item_count").notNull().default(0),
-  error: text("error"),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-  finishedAt: timestamp("finished_at", { withTimezone: true }),
-});
+export const collectionRuns = pgTable(
+  "collection_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    brandAccountId: uuid("brand_account_id")
+      .notNull()
+      .references(() => brandAccounts.id, { onDelete: "cascade" }),
+    platform: platformEnum("platform").notNull(),
+    apifyRunId: text("apify_run_id"),
+    status: runStatusEnum("status").notNull().default("running"),
+    itemCount: integer("item_count").notNull().default(0),
+    error: text("error"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (t) => [
+    // run 이 매일 계정 수만큼 쌓여 무한 증가 — 관리 화면 최근순 조회와 KPI 기간 집계용.
+    index("collection_runs_started_at_idx").on(desc(t.startedAt)),
+    // Apify webhook/reconciler 가 콜백마다 apify_run_id 로 조회한다(핫패스 풀스캔 방지).
+    index("collection_runs_apify_run_id_idx").on(t.apifyRunId),
+    // FK 조인 + brand_accounts cascade delete 대상.
+    index("collection_runs_brand_account_idx").on(t.brandAccountId),
+  ],
+);
 
 // ── 엔티티 (upsert) ─────────────────────────────────────
 
@@ -91,7 +104,14 @@ export const ads = pgTable(
     daysActive: integer("days_active").notNull().default(0),
     raw: jsonb("raw"),
   },
-  (t) => [uniqueIndex("ads_account_platform_ad_uniq").on(t.brandAccountId, t.platformAdId)],
+  (t) => [
+    uniqueIndex("ads_account_platform_ad_uniq").on(t.brandAccountId, t.platformAdId),
+    // 위닝 광고/피드가 days_active DESC 정렬로 조회한다.
+    index("ads_days_active_idx").on(desc(t.daysActive)),
+    // 최근 변경(신규/비활성) 카드가 first/last_seen DESC 로 조회한다.
+    index("ads_first_seen_idx").on(desc(t.firstSeen)),
+    index("ads_last_seen_idx").on(desc(t.lastSeen)),
+  ],
 );
 
 export const posts = pgTable(
@@ -108,7 +128,11 @@ export const posts = pgTable(
     postedAt: timestamp("posted_at", { withTimezone: true }),
     raw: jsonb("raw"),
   },
-  (t) => [uniqueIndex("posts_account_platform_post_uniq").on(t.brandAccountId, t.platformPostId)],
+  (t) => [
+    uniqueIndex("posts_account_platform_post_uniq").on(t.brandAccountId, t.platformPostId),
+    // 피드/캘린더/최근 변경이 posted_at 정렬·범위 조회로 접근한다.
+    index("posts_posted_at_idx").on(desc(t.postedAt)),
+  ],
 );
 
 export const mediaAssets = pgTable(

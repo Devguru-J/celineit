@@ -56,7 +56,8 @@ export default function Feed() {
 
   const cutoff = useMemo(() => {
     if (period === "all") return null;
-    return new Date(Date.now() - period * 86_400_000).toISOString().slice(0, 10);
+    // 서버가 내려주는 item.date 는 JST 기준 날짜 → 컷오프도 JST(UTC+9)로 계산.
+    return new Date(Date.now() + 9 * 3_600_000 - period * 86_400_000).toISOString().slice(0, 10);
   }, [period]);
 
   const items = useMemo(

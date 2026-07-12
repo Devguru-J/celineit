@@ -88,9 +88,17 @@ async function main() {
           platform: a.platform,
           handle: a.handle,
           profileUrl: a.profileUrl ?? null,
+          // Meta Ads 는 비용이 높고 광고는 매일 바뀌지 않으므로 격일 수집.
+          collectCadence: a.platform === "meta_ads" ? "every_2d" : "daily",
         })
-        .onConflictDoNothing({
+        // 이미 시드된 계정에도 cadence 변경이 반영되도록 upsert 로 갱신한다.
+        // (onConflictDoNothing 이면 기존 meta_ads 계정이 daily 로 남아 격일 수집이 적용되지 않음)
+        .onConflictDoUpdate({
           target: [brandAccounts.brandId, brandAccounts.platform, brandAccounts.handle],
+          set: {
+            profileUrl: a.profileUrl ?? null,
+            collectCadence: a.platform === "meta_ads" ? "every_2d" : "daily",
+          },
         });
       accountCount++;
     }

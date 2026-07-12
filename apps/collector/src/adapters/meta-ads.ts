@@ -14,10 +14,12 @@ export const metaAdsAdapter: PlatformAdapter = {
       account.profileUrl ??
       `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${country}` +
         `&q=${encodeURIComponent(account.handle)}&search_type=keyword_unordered&media_type=all`;
+    // ⚠️ 이 actor(apify/facebook-ads-scraper)는 `maxItems`/`count` 를 무시하고
+    // 키워드에 매칭되는 광고를 전부 긁어온다(실측: limit=50 인데 271~818건 반환, 건당 $0.005).
+    // 실제로 존중하는 파라미터는 `resultsLimit`(URL당 결과 상한) 이므로 이걸로 상한을 건다.
     return {
       startUrls: [{ url: searchUrl }],
-      maxItems: opts.maxItems,
-      count: opts.maxItems,
+      resultsLimit: opts.maxItems,
       ...extra,
     };
   },

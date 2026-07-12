@@ -2,7 +2,7 @@
 // 레퍼런스 fetch_threads_posts 포팅.
 import { IG_APP_ID, IG_APP_ID_THREADS, UA } from "./constants";
 import { num, str } from "./format";
-import { httpJson, httpText, safe } from "./http.server";
+import { httpJson, httpText, mapLimit, safe } from "./http.server";
 
 export type ThreadPost = {
   account: string;
@@ -110,6 +110,8 @@ async function fetchAccountThreads(username: string): Promise<ThreadPost[]> {
 }
 
 export async function getThreadsPosts(accounts: string[]): Promise<ThreadPost[]> {
-  const results = await Promise.all(accounts.map(fetchAccountThreads));
+  // 동시 5개 제한(레퍼런스 max_workers=5). 계정당 최대 5개 doc_id 후보를 순회하므로
+  // 무제한이면 서브리퀘스트가 계정수×5 로 폭증한다.
+  const results = await mapLimit(accounts, 5, fetchAccountThreads);
   return results.flat();
 }

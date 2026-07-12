@@ -1,6 +1,6 @@
 // X(트위터) — syndication(임베드용) API의 __NEXT_DATA__ 파싱. 레퍼런스 fetch_x_posts 포팅.
 import { num, str } from "./format";
-import { httpText, safe } from "./http.server";
+import { httpText, mapLimit, safe } from "./http.server";
 
 export type XPost = {
   account: string;
@@ -80,6 +80,7 @@ async function fetchAccountPosts(username: string): Promise<XPost[]> {
 }
 
 export async function getXPosts(accounts: string[]): Promise<XPost[]> {
-  const results = await Promise.all(accounts.map(fetchAccountPosts));
+  // 동시 3개 제한(레퍼런스 max_workers=3): syndication 엔드포인트 rate-limit 회피.
+  const results = await mapLimit(accounts, 3, fetchAccountPosts);
   return results.flat();
 }

@@ -23,6 +23,9 @@ id = "07f80eaefaa6470d9cf0fa956626d603"
 #   npx wrangler secret put APIFY_TOKEN
 [vars]
 MAX_ITEMS = "50"
+# Meta Ad Library 스크래퍼(apify/facebook-ads-scraper)는 run당 비용이 압도적으로 높아
+# (전체 Apify 비용의 ~70%) 별도로 수집량을 낮게 제한한다. 미설정 시 15.
+META_ADS_MAX_ITEMS = "15"
 # Apify 완료 webhook 수신 주소의 베이스 (이 워커의 공개 URL).
 PUBLIC_URL = "https://celine-collector.vousmemanquez.workers.dev"
 # APIFY_ACTOR_META_ADS = "curious_coder~facebook-ads-library-scraper"

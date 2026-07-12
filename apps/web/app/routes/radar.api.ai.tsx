@@ -4,6 +4,9 @@ import { cached } from "~/lib/radar/http.server";
 
 export async function loader({ request }: { request: Request }) {
   const force = new URL(request.url).searchParams.get("force") === "1";
-  const { data, fetchedAt } = await cached("ai", force, getAiData);
+  const { data, fetchedAt } = await cached("ai", force, getAiData, {
+    isEmpty: (d) =>
+      d.models.latest.length === 0 && d.models.trending.length === 0 && d.news.length === 0,
+  });
   return Response.json({ ...data, fetchedAt });
 }

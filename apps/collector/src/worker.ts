@@ -18,6 +18,8 @@ export interface Env {
   APIFY_ACTOR_TWITTER?: string;
   APIFY_ACTOR_TIKTOK?: string;
   MAX_ITEMS?: string;
+  // Meta Ads 는 run당 비용이 압도적으로 높아 별도로 낮은 상한을 둔다(기본 15).
+  META_ADS_MAX_ITEMS?: string;
   MANUAL_COLLECT_SECRET?: string;
   // 이 워커의 공개 URL. Apify 완료 webhook 수신 주소(${PUBLIC_URL}/webhook)에 사용.
   PUBLIC_URL?: string;
@@ -27,9 +29,10 @@ function actorFor(env: Env, platform: Platform): string | undefined {
   return (env as unknown as Record<string, string | undefined>)[`APIFY_ACTOR_${platform.toUpperCase()}`];
 }
 
-// 격일 플랫폼은 짝수 day-of-month 에만 수집 (단순 규칙; 추후 cadence 컬럼 기반으로 정교화).
-function dueToday(cadence: string, day: number): boolean {
-  if (cadence === "every_2d") return day % 2 === 0;
+// 격일 플랫폼은 epoch 일수 짝수 날에만 수집한다. day-of-month 홀짝이면 31일 달의
+// 월말(30→31→1→2)에서 3일 공백이 생기지만, epoch 일수는 엄격히 하루씩 번갈아 든다.
+function dueToday(cadence: string, epochDay: number): boolean {
+  if (cadence === "every_2d") return epochDay % 2 === 0;
   return true;
 }
 
@@ -43,6 +46,13 @@ function json(data: unknown, status = 200): Response {
 function parseMaxItems(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(1, Math.min(200, Math.floor(value)));
+}
+
+// 환경변수 정수 파싱. 잘못 설정된 값("", "abc")이 NaN 으로 흘러가면 actor 의
+// resultsLimit 이 무효화되어 무제한 수집(비용 폭탄)이 되므로 반드시 fallback 처리.
+function envInt(value: string | undefined, fallback: number): number {
+  const n = Number(value);
+  return value !== undefined && Number.isFinite(n) && n >= 1 ? Math.min(200, Math.floor(n)) : fallback;
 }
 
 // 이 워커의 공개 webhook 주소. Apify 가 완료 시 호출한다(외부→워커라 loopback 무관).
@@ -66,11 +76,13 @@ async function startMany(
   const db = createDb(env.HYPERDRIVE.connectionString);
   const apify = new ApifyClient(env.APIFY_TOKEN);
   const webhookUrl = webhookUrlOf(env);
+  // Meta Ads 는 비용이 높아 플랫폼별로 더 낮은 수집 상한을 적용한다.
+  const metaMaxItems = envInt(env.META_ADS_MAX_ITEMS, 15);
   await Promise.all(
     accounts.map((account) =>
       startCollect(db, apify, account, {
         date,
-        maxItems,
+        maxItems: account.platform === "meta_ads" ? metaMaxItems : maxItems,
         actorOverride: actorFor(env, account.platform),
         webhookUrl,
       }).catch(() => undefined),
@@ -87,6 +99,17 @@ const TERMINAL_FAIL = new Set(["FAILED", "ABORTED", "TIMED-OUT", "TIMED_OUT"]);
 async function reconcilePending(env: Env, limit = 4): Promise<{ checked: number; done: number }> {
   const db = createDb(env.HYPERDRIVE.connectionString);
   const apify = new ApifyClient(env.APIFY_TOKEN);
+  // 6시간 reconcile 창을 벗어나 영원히 running 으로 남는 고아 run 을 error 로 정리한다.
+  // (Apify run 은 수 분 내 끝나므로 12시간이면 충분히 보수적)
+  await db
+    .update(collectionRuns)
+    .set({ status: "error", error: "timeout: 12시간 내 완료되지 않아 자동 종료", finishedAt: new Date() })
+    .where(
+      and(
+        eq(collectionRuns.status, "running"),
+        sql`${collectionRuns.startedAt} < now() - interval '12 hours'`,
+      ),
+    );
   const rows = await db
     .select({ apifyRunId: collectionRuns.apifyRunId })
     .from(collectionRuns)
@@ -128,7 +151,7 @@ export default {
     }
     const db = createDb(env.HYPERDRIVE.connectionString);
     const today = new Date().toISOString().slice(0, 10);
-    const day = new Date().getUTCDate();
+    const epochDay = Math.floor(Date.now() / 86_400_000);
 
     const rows = await db
       .select({
@@ -143,7 +166,7 @@ export default {
       .where(eq(brandAccounts.isActive, true));
 
     const due = rows.filter(
-      (r) => ACTIVE_PLATFORMS.includes(r.platform as Platform) && dueToday(r.cadence, day),
+      (r) => ACTIVE_PLATFORMS.includes(r.platform as Platform) && dueToday(r.cadence, epochDay),
     );
 
     // Queue 없이(무료 플랜) Apify run 을 비동기로 시작만 한다. 적재는 완료 webhook 에서.
@@ -154,7 +177,7 @@ export default {
       profileUrl: r.profileUrl,
       apifyInput: r.apifyInput as Record<string, unknown> | null,
     }));
-    ctx.waitUntil(startMany(env, accounts, today, Number(env.MAX_ITEMS ?? 50)));
+    ctx.waitUntil(startMany(env, accounts, today, envInt(env.MAX_ITEMS, 50)));
   },
 
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -184,7 +207,7 @@ export default {
 
       const db = createDb(env.HYPERDRIVE.connectionString);
       const today = new Date().toISOString().slice(0, 10);
-      const maxItems = parseMaxItems(body.maxItems, Number(env.MAX_ITEMS ?? 50));
+      const maxItems = parseMaxItems(body.maxItems, envInt(env.MAX_ITEMS, 50));
       const rows = await db
         .select({
           id: brandAccounts.id,

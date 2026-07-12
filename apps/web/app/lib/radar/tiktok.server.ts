@@ -1,7 +1,7 @@
 // 틱톡 — tikwm 무료 공개 API(트렌딩 + 구독계정). 레퍼런스 tiktok 섹션 포팅.
 import { TIKWM_BASE, TIKTOK_REGION, UA } from "./constants";
 import { num, str } from "./format";
-import { httpJson, safe } from "./http.server";
+import { httpJson, mapLimit, safe } from "./http.server";
 import { proxyEnabled, proxyGetJson } from "./proxy.server";
 
 // 프록시 활성 시 프록시 경유, 아니면 직접 fetch (tikwm는 CF IP를 차단하므로 프록시 권장)
@@ -61,7 +61,8 @@ async function fetchUser(handle: string): Promise<TikTokPost[]> {
 
 export async function getTikTok(accounts: string[]): Promise<TikTokPost[]> {
   const trending = await fetchTrending();
-  const userChunks = await Promise.all(accounts.map(fetchUser));
+  // 동시 3개 제한(레퍼런스 max_workers=3): tikwm 무료 API rate-limit 회피.
+  const userChunks = await mapLimit(accounts, 3, fetchUser);
   const posts = [...trending, ...userChunks.flat()];
   const seen = new Set<string>();
   const unique: TikTokPost[] = [];

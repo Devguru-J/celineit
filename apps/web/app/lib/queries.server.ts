@@ -13,8 +13,30 @@ import {
   posts as postsT,
 } from "@celine/db";
 import { ACTIVE_PLATFORMS, FOCUS_KEYWORDS, type Platform } from "@celine/shared";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from "drizzle-orm";
 import { getDb } from "./db.server";
+
+// 일본 시장 대상 제품이므로 "하루" 경계와 날짜·시각 표기는 JST(UTC+9, DST 없음) 기준으로 한다.
+// Workers/Node 런타임 시간대는 UTC 라서 Date#getHours/getDay/toISOString 을 그대로 쓰면
+// JST 기준으로 최대 9시간(자정 전후는 하루) 어긋난다.
+const JST_OFFSET_MS = 9 * 3_600_000;
+/** 오늘(+offsetDays) JST 자정의 UTC 시각. timestamptz 컬럼과 인덱스 친화적으로 비교할 때 사용. */
+function jstDayStartUtc(offsetDays = 0): Date {
+  const dayStartJst = Math.floor((Date.now() + JST_OFFSET_MS) / 86_400_000) * 86_400_000;
+  return new Date(dayStartJst - JST_OFFSET_MS + offsetDays * 86_400_000);
+}
+/** JST 기준 YYYY-MM-DD */
+function jstDateStr(d: Date): string {
+  return new Date(d.getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
+}
+/** JST 기준 시(0-23) */
+function jstHour(d: Date): number {
+  return new Date(d.getTime() + JST_OFFSET_MS).getUTCHours();
+}
+/** JST 기준 요일(0=일) */
+function jstWeekday(d: Date): number {
+  return new Date(d.getTime() + JST_OFFSET_MS).getUTCDay();
+}
 
 export type FeedItem = {
   id: string;
@@ -119,7 +141,7 @@ export async function getFeed(): Promise<FeedItem[]> {
       platform: p.platform as Platform,
       text: p.caption,
       format: p.format,
-      date: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+      date: p.postedAt ? jstDateStr(p.postedAt) : null,
       likes: p.likes,
       comments: p.comments,
       views: p.views,
@@ -279,7 +301,7 @@ export async function getBrandDetail(slug: string) {
       platform: p.platform as Platform,
       text: p.caption,
       format: p.format,
-      date: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+      date: p.postedAt ? jstDateStr(p.postedAt) : null,
       likes: p.likes,
       comments: p.comments,
       views: p.views,
@@ -399,6 +421,9 @@ export async function getCollectableAccounts(): Promise<CollectableBrand[]> {
 
 export async function getRunStats() {
   const db = getDb();
+  // date_trunc('day', now()) 는 DB 세션 시간대(UTC) 자정이라 JST 오전 9시에 하루가 바뀐다.
+  const todayStart = jstDayStartUtc();
+  const yesterdayStart = jstDayStartUtc(-1);
   const [today, yesterday] = await Promise.all([
     db
       .select({
@@ -407,7 +432,7 @@ export async function getRunStats() {
         fail: sql<number>`count(*) filter (where ${collectionRuns.status} = 'error')::int`,
       })
       .from(collectionRuns)
-      .where(gte(collectionRuns.startedAt, sql`date_trunc('day', now())`)),
+      .where(gte(collectionRuns.startedAt, todayStart)),
     db
       .select({
         total: sql<number>`count(*)::int`,
@@ -417,8 +442,8 @@ export async function getRunStats() {
       .from(collectionRuns)
       .where(
         and(
-          gte(collectionRuns.startedAt, sql`date_trunc('day', now()) - interval '1 day'`),
-          sql`${collectionRuns.startedAt} < date_trunc('day', now())`,
+          gte(collectionRuns.startedAt, yesterdayStart),
+          lt(collectionRuns.startedAt, todayStart),
         ),
       ),
   ]);
@@ -480,7 +505,7 @@ export type DataQualityStatus = {
 
 function toDateOnly(v: Date | string | null | undefined) {
   if (!v) return null;
-  return typeof v === "string" ? v.slice(0, 10) : v.toISOString().slice(0, 10);
+  return typeof v === "string" ? v.slice(0, 10) : jstDateStr(v);
 }
 
 function platformLabel(platform: Platform) {
@@ -534,6 +559,17 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
   const accountIds = accounts.map((a) => a.accountId);
   if (accountIds.length === 0) return [];
 
+  // 지표는 일별 누적 스냅샷이라 그대로 sum 하면 관측일수만큼 부풀려진다(28일 관측 = 28배).
+  // 게시물별 최대(≈최신) 스냅샷으로 줄인 뒤 계정 단위로 합산한다.
+  const perPostEng = db
+    .select({
+      postId: postMetricsDaily.postId,
+      eng: sql<number>`max(coalesce(${postMetricsDaily.likes}, 0) + coalesce(${postMetricsDaily.comments}, 0) + coalesce(${postMetricsDaily.views}, 0))`.as("eng"),
+    })
+    .from(postMetricsDaily)
+    .groupBy(postMetricsDaily.postId)
+    .as("per_post_eng");
+
   const [metricRows, postRows, adRows] = await Promise.all([
     db
       .select({
@@ -548,11 +584,11 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
     db
       .select({
         accountId: postsT.brandAccountId,
-        posts: sql<number>`count(distinct ${postsT.id})::int`,
-        engagement: sql<number>`coalesce(sum(coalesce(${postMetricsDaily.likes}, 0) + coalesce(${postMetricsDaily.comments}, 0) + coalesce(${postMetricsDaily.views}, 0)), 0)::int`,
+        posts: sql<number>`count(${postsT.id})::int`,
+        engagement: sql<number>`coalesce(sum(${perPostEng.eng}), 0)::int`,
       })
       .from(postsT)
-      .leftJoin(postMetricsDaily, eq(postMetricsDaily.postId, postsT.id))
+      .leftJoin(perPostEng, eq(perPostEng.postId, postsT.id))
       .where(inArray(postsT.brandAccountId, accountIds))
       .groupBy(postsT.brandAccountId),
     db
@@ -600,16 +636,17 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
 export async function getDataQualityStatus(): Promise<DataQualityStatus[]> {
   const db = getDb();
   const [runs, accounts] = await Promise.all([
+    // 전체 최근 200건 슬라이스 방식은 수집량 많은 플랫폼이 창을 독점하면
+    // 저빈도 플랫폼이 잘려 'missing' 으로 오판된다 → 플랫폼별 최신 1건을 직접 조회.
     db
-      .select({
+      .selectDistinctOn([collectionRuns.platform], {
         platform: collectionRuns.platform,
         status: collectionRuns.status,
         startedAt: collectionRuns.startedAt,
         finishedAt: collectionRuns.finishedAt,
       })
       .from(collectionRuns)
-      .orderBy(desc(collectionRuns.startedAt))
-      .limit(200),
+      .orderBy(collectionRuns.platform, desc(collectionRuns.startedAt)),
     db
       .select({ platform: brandAccounts.platform, n: sql<number>`count(*)::int` })
       .from(brandAccounts)
@@ -695,10 +732,15 @@ export async function getSummary() {
       .from(brandsT)
       .where(gte(brandsT.createdAt, sql`now() - interval '7 days'`)),
     db.select({ n: sql<number>`count(*)::int` }).from(adsT).where(eq(adsT.isActive, true)),
+    // JST 기준 어제 스냅샷. rows=0 이면 그날 수집 자체가 없던 것이므로 델타를 만들지 않는다
+    // (0 과 비교하면 pctDelta 가 항상 "신규" 배지를 그리는 오표시가 됨).
     db
-      .select({ n: sql<number>`count(*)::int` })
+      .select({
+        n: sql<number>`count(*) filter (where ${adPresenceDaily.wasActive})::int`,
+        rows: sql<number>`count(*)::int`,
+      })
       .from(adPresenceDaily)
-      .where(and(eq(adPresenceDaily.date, sql`current_date - 1`), eq(adPresenceDaily.wasActive, true))),
+      .where(eq(adPresenceDaily.date, jstDateStr(jstDayStartUtc(-1)))),
     db
       .select({ n: sql<number>`count(*)::int` })
       .from(postsT)
@@ -738,7 +780,12 @@ export async function getSummary() {
         icon: "analytics",
         delta: newBrands7d.n > 0 ? ({ dir: "up", text: `+${newBrands7d.n} 이번 주` } as KpiDelta) : undefined,
       },
-      { label: "활성 광고", value: String(activeAds.n), icon: "ad_units", delta: pctDelta(activeAds.n, activeAdsYesterday.n) },
+      {
+        label: "활성 광고",
+        value: String(activeAds.n),
+        icon: "ad_units",
+        delta: activeAdsYesterday.rows > 0 ? pctDelta(activeAds.n, activeAdsYesterday.n) : undefined,
+      },
       { label: "최근 7일 신규 게시물", value: String(weekPosts.n), icon: "post_add", delta: pctDelta(weekPosts.n, prevWeekPosts.n) },
       { label: "오늘 완료된 수집", value: String(runsToday.n), icon: "sync", delta: pctDelta(runsToday.n, runsYesterday.n) },
     ],
@@ -846,6 +893,7 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
   const allBrandMetricRows = await db
     .select({
       id: postsT.id,
+      accountId: postsT.brandAccountId,
       platform: brandAccounts.platform,
       likes: sql<number | null>`max(${postMetricsDaily.likes})`,
       comments: sql<number | null>`max(${postMetricsDaily.comments})`,
@@ -871,43 +919,34 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
         ? engagementValues[Math.floor(engagementValues.length / 2)]
         : (engagementValues[engagementValues.length / 2 - 1] + engagementValues[engagementValues.length / 2]) / 2;
 
-  const weeklyRows = await db
-    .select({
-      date: postMetricsDaily.date,
-      likes: postMetricsDaily.likes,
-      comments: postMetricsDaily.comments,
-      views: postMetricsDaily.views,
-    })
-    .from(postMetricsDaily)
-    .innerJoin(postsT, eq(postMetricsDaily.postId, postsT.id))
-    .where(and(inArray(postsT.brandAccountId, accountIds), gte(postMetricsDaily.date, sql`current_date - 28`)))
-    .orderBy(postMetricsDaily.date);
-
+  // 주간 인게이지먼트: 일별 스냅샷은 누적값이라 그대로 합산하면 관측일수만큼 부풀려진다.
+  // 게시물별 최대(≈최신) 지표를 게시 시점(postedAt)의 주에 귀속시켜 집계한다.
   const weeklyMap = new Map<string, number>();
-  for (const r of weeklyRows) {
-    const d = new Date(`${r.date}T00:00:00Z`);
-    const now = new Date();
-    const diffDays = Math.max(0, Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - d.getTime()) / 86_400_000));
+  const nowMs = Date.now();
+  for (const p of metricRows) {
+    if (!p.postedAt) continue;
+    const diffDays = Math.floor((nowMs - p.postedAt.getTime()) / 86_400_000);
+    if (diffDays < 0 || diffDays >= 28) continue;
     const idx = Math.min(3, Math.floor(diffDays / 7));
     const label = `W${4 - idx}`;
-    weeklyMap.set(label, (weeklyMap.get(label) ?? 0) + (r.likes ?? 0) + (r.comments ?? 0) + (r.views ?? 0));
+    weeklyMap.set(label, (weeklyMap.get(label) ?? 0) + engagementOf(p));
   }
   const weeklyEngagement = ["W1", "W2", "W3", "W4"].map((week) => ({ week, value: weeklyMap.get(week) ?? 0 }));
 
-  const allMetricRows = await db
-    .select({
+  // 벤치마크 분포: 계정별 최신 인게이지먼트율만 필요 — 전체 시계열 로드 대신 DISTINCT ON.
+  const latestRateRows = await db
+    .selectDistinctOn([accountMetricsDaily.brandAccountId], {
       accountId: accountMetricsDaily.brandAccountId,
-      date: accountMetricsDaily.date,
       engagementRate: accountMetricsDaily.engagementRate30d,
     })
     .from(accountMetricsDaily)
-    .orderBy(accountMetricsDaily.brandAccountId, accountMetricsDaily.date);
-  const latestByAccount = new Map<string, number>();
-  for (const r of allMetricRows) {
-    if (r.engagementRate != null) latestByAccount.set(r.accountId, r.engagementRate);
-  }
+    .where(isNotNull(accountMetricsDaily.engagementRate30d))
+    .orderBy(accountMetricsDaily.brandAccountId, desc(accountMetricsDaily.date));
   const engagementRate = followerRows.at(-1)?.engagementRate ?? null;
-  const distribution = [...latestByAccount.values()].sort((a, b) => a - b);
+  const distribution = latestRateRows
+    .map((r) => r.engagementRate)
+    .filter((v): v is number => v != null)
+    .sort((a, b) => a - b);
   const percentile =
     engagementRate != null && distribution.length >= 3
       ? Math.round((distribution.filter((v) => v <= engagementRate).length / distribution.length) * 100)
@@ -916,7 +955,8 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
 
   const platformBreakdown = brandAccountsForTrends.map((a) => {
     const latest = rawBrandFollowerRows.filter((r) => r.accountId === a.accountId).at(-1);
-    const posts = allBrandMetricRows.filter((p) => p.platform === a.platform);
+    // 같은 플랫폼에 계정이 2개 이상이면 platform 필터는 서로의 게시물을 중복 귀속시킨다 → 계정 기준.
+    const posts = allBrandMetricRows.filter((p) => p.accountId === a.accountId);
     const engagement = posts.reduce((sum, p) => sum + (p.likes ?? 0) + (p.comments ?? 0) + (p.views ?? 0), 0);
     return {
       platform: a.platform as Platform,
@@ -995,8 +1035,8 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
           const activeDays = activeRows.map((r) => r.daysActive ?? 0).filter((v) => v > 0);
           return {
             active: activeRows.length,
-            new7d: rows.filter((r) => r.firstSeen >= new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)).length,
-            inactive7d: rows.filter((r) => !r.isActive && r.lastSeen >= new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)).length,
+            new7d: rows.filter((r) => r.firstSeen >= jstDateStr(new Date(Date.now() - 7 * 86_400_000))).length,
+            inactive7d: rows.filter((r) => !r.isActive && r.lastSeen >= jstDateStr(new Date(Date.now() - 7 * 86_400_000))).length,
             avgDaysActive: activeDays.length ? Math.round(activeDays.reduce((sum, v) => sum + v, 0) / activeDays.length) : null,
             longestActive: activeRows
               .sort((a, b) => (b.daysActive ?? 0) - (a.daysActive ?? 0))
@@ -1029,7 +1069,7 @@ export async function getTrends(slug?: string, selectedPlatform?: Platform | "al
       return {
         ...p,
         platform: p.platform as Platform,
-        postedAt: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+        postedAt: p.postedAt ? jstDateStr(p.postedAt) : null,
         engagement,
         status: medianEngagement > 0 && engagement >= medianEngagement * 3 ? "VIRAL" : "STABLE",
         imageUrl: media.get(p.id) ?? null,
@@ -1086,6 +1126,7 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
     const top = kwRows
       .filter((k) => k.kind === "top")
       .sort((a, b) => b.count - a.count)
+      .slice(0, 10) // UI 라벨이 "Top 10"
       .map((k) => ({ keyword: k.keyword, count: k.count }));
     const focusStored = new Map(kwRows.filter((k) => k.kind === "focus").map((k) => [k.keyword, k.count]));
     // FOCUS_KEYWORDS 전체를 노출(미언급=0), 언급 많은 순
@@ -1102,7 +1143,7 @@ export async function getItemDetail(kind: "post" | "ad", id: string) {
       title: p.caption,
       format: p.format,
       permalink: p.permalink,
-      date: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : null,
+      date: p.postedAt ? jstDateStr(p.postedAt) : null,
       media: media.map((m) => ({ url: m.url, kind: m.kind })),
       metricsHistory: metrics,
       commentKeywords: commentKw,
@@ -1215,7 +1256,8 @@ export async function getCalendar() {
     .select({ postedAt: postsT.postedAt, platform: brandAccounts.platform, format: postsT.format })
     .from(postsT)
     .innerJoin(brandAccounts, eq(postsT.brandAccountId, brandAccounts.id))
-    .where(sql`${postsT.postedAt} is not null`);
+    // 전체 게시물 풀스캔 방지: 화면은 최신 월 중심이므로 최근 1년치면 충분하다.
+    .where(and(sql`${postsT.postedAt} is not null`, gte(postsT.postedAt, jstDayStartUtc(-365))));
 
   const byDate = new Map<string, { count: number; platforms: Set<Platform> }>();
   const byPlatform = new Map<Platform, number>();
@@ -1225,18 +1267,18 @@ export async function getCalendar() {
     if (!r.postedAt) return max;
     return !max || r.postedAt > max ? r.postedAt : max;
   }, null);
-  const monthKey = latest ? latest.toISOString().slice(0, 7) : new Date().toISOString().slice(0, 7);
+  const monthKey = latest ? jstDateStr(latest).slice(0, 7) : jstDateStr(new Date()).slice(0, 7);
   let totalMTD = 0;
   for (const r of rows) {
     if (!r.postedAt) continue;
-    const key = r.postedAt.toISOString().slice(0, 10);
+    const key = jstDateStr(r.postedAt);
     if (!byDate.has(key)) byDate.set(key, { count: 0, platforms: new Set() });
     const e = byDate.get(key)!;
     e.count++;
     e.platforms.add(r.platform as Platform);
     byPlatform.set(r.platform as Platform, (byPlatform.get(r.platform as Platform) ?? 0) + 1);
     byFormat.set(r.format ?? "unknown", (byFormat.get(r.format ?? "unknown") ?? 0) + 1);
-    byHour.set(r.postedAt.getHours(), (byHour.get(r.postedAt.getHours()) ?? 0) + 1);
+    byHour.set(jstHour(r.postedAt), (byHour.get(jstHour(r.postedAt)) ?? 0) + 1);
     if (key.startsWith(monthKey)) totalMTD++;
   }
   const days = [...byDate.entries()]
@@ -1256,13 +1298,16 @@ export async function getCalendar() {
   const avgDailyCadence = activeDaysMTD ? Math.round((totalMTD / activeDaysMTD) * 10) / 10 : 0;
   const peak = [...byHour.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
   const peakHour = peak ? `${String(peak[0]).padStart(2, "0")}:00` : null;
+  const byWeekday = new Map<number, number>();
+  for (const r of rows) {
+    if (!r.postedAt) continue;
+    const wd = jstWeekday(r.postedAt);
+    byWeekday.set(wd, (byWeekday.get(wd) ?? 0) + 1);
+  }
   const quiet = days.length
     ? ["일", "월", "화", "수", "목", "금", "토"][
         [...Array(7).keys()]
-          .map((day) => ({
-            day,
-            count: rows.filter((r) => r.postedAt && r.postedAt.getDay() === day).length,
-          }))
+          .map((day) => ({ day, count: byWeekday.get(day) ?? 0 }))
           .sort((a, b) => a.count - b.count)[0].day
       ]
     : null;
@@ -1336,7 +1381,7 @@ export type RecentChange = {
   linkTo: string;
 };
 
-// 팔로워 급증 감지 임계값(24h, %).
+// 팔로워 급증 감지 임계값(최근 7일, %).
 const FOLLOWER_SPIKE_PCT = 3;
 
 // 최근 변경: 신규 광고 / 광고 비활성화 / 팔로워 급증 / (부족 시)신규 포스트.
@@ -1377,6 +1422,7 @@ export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
   // (c) 팔로워 급증 — 최근 7일 계정별 최소/최대 팔로워 비교
   const metricRows = await db
     .select({
+      accountId: brandAccounts.id,
       brand: brandsT.name,
       slug: brandsT.slug,
       platform: brandAccounts.platform,
@@ -1390,10 +1436,11 @@ export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
     .orderBy(accountMetricsDaily.date);
 
   type Acc = { brand: string; slug: string; platform: Platform; firstF: number; lastF: number; lastDate: string };
+  // 브랜드|플랫폼 키는 같은 플랫폼의 복수 계정이 서로 덮어써 급증 감지를 오염시킨다 → 계정 id 기준.
   const perAccount = new Map<string, Acc>();
   for (const r of metricRows) {
     if (r.followers == null) continue;
-    const key = `${r.brand}|${r.platform}`;
+    const key = r.accountId;
     const cur = perAccount.get(key);
     if (!cur) {
       perAccount.set(key, {
@@ -1410,11 +1457,11 @@ export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
     }
   }
   const spikes: RecentChange[] = [];
-  for (const a of perAccount.values()) {
+  for (const [accountId, a] of perAccount) {
     if (a.firstF > 0 && (a.lastF - a.firstF) / a.firstF >= FOLLOWER_SPIKE_PCT / 100) {
       const gain = a.lastF - a.firstF;
       spikes.push({
-        id: `${a.slug}-${a.platform}`,
+        id: `${a.slug}-${a.platform}-${accountId.slice(0, 8)}`,
         kind: "follower_spike",
         brand: a.brand,
         platform: a.platform,
@@ -1426,10 +1473,12 @@ export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
     }
   }
 
-  // 이벤트 병합
+  // 이벤트 병합. 최근 firstSeen 이면서 이미 비활성인 광고는 신규/비활성 양쪽에 잡히므로
+  // 비활성 이벤트만 남긴다(사용자에게 더 최신 상태).
+  const inactiveIds = new Set(inactiveAds.map((a) => a.id));
   const adMedia = await firstMediaByOwner("ad", [...newAds, ...inactiveAds].map((a) => a.id));
   const events: RecentChange[] = [
-    ...newAds.map((a) => ({
+    ...newAds.filter((a) => !inactiveIds.has(a.id)).map((a) => ({
       id: a.id,
       kind: "new_ad" as const,
       brand: a.brand,
@@ -1475,7 +1524,7 @@ export async function getRecentChanges(limit = 6): Promise<RecentChange[]> {
         brand: p.brand,
         platform: p.platform as Platform,
         text: p.caption,
-        when: p.postedAt ? p.postedAt.toISOString().slice(0, 10) : "",
+        when: p.postedAt ? jstDateStr(p.postedAt) : "",
         imageUrl: postMedia.get(p.id) ?? null,
         linkTo: `/item/post/${p.id}`,
       });

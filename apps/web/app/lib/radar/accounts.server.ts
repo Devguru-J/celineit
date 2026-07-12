@@ -6,10 +6,17 @@ import { getDb } from "../db.server";
 import { DEFAULT_ACCOUNTS, type RadarSource } from "./constants";
 
 // username 정규화: X는 대소문자 보존, 그 외 소문자. @/공백 트림.
+// 플랫폼 공통으로 안전한 문자만 허용(영숫자/._-, 최대 40자) — URL 에 그대로 삽입되고
+// 캐시 키에도 들어가므로 임의 문자열이 저장되면 안 된다. 불합격이면 "" 반환.
 export function normalizeUsername(source: RadarSource, raw: string): string {
   const trimmed = (raw || "").trim().replace(/^@+/, "");
-  return source === "x" ? trimmed : trimmed.toLowerCase();
+  const name = source === "x" ? trimmed : trimmed.toLowerCase();
+  return /^[a-zA-Z0-9._-]{1,40}$/.test(name) ? name : "";
 }
+
+// 소스당 구독 계정 상한. 릴스는 계정당 순차 수집(900ms 간격)이라 무제한이면
+// 요청 시간·프록시 대역폭이 계정 수에 비례해 폭증한다.
+export const MAX_ACCOUNTS_PER_SOURCE = 30;
 
 export async function listAccounts(source: RadarSource): Promise<string[]> {
   const db = getDb();
@@ -32,12 +39,15 @@ export async function listAccounts(source: RadarSource): Promise<string[]> {
 
 export async function addAccount(source: RadarSource, raw: string): Promise<string[]> {
   const username = normalizeUsername(source, raw);
-  if (username) {
-    await getDb()
-      .insert(trendAccounts)
-      .values({ source, username })
-      .onConflictDoNothing();
+  if (!username) throw new Error("사용자명이 올바르지 않습니다 (영숫자/._- 최대 40자)");
+  const existing = await listAccounts(source);
+  if (!existing.includes(username) && existing.length >= MAX_ACCOUNTS_PER_SOURCE) {
+    throw new Error(`소스당 계정은 최대 ${MAX_ACCOUNTS_PER_SOURCE}개까지 등록할 수 있습니다`);
   }
+  await getDb()
+    .insert(trendAccounts)
+    .values({ source, username })
+    .onConflictDoNothing();
   return listAccounts(source);
 }
 
