@@ -1,6 +1,9 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
+  // 인증 (게이트 제외 경로 — workers/auth-gate.ts)
+  route("login", "routes/login.tsx"),
+  route("logout", "routes/logout.tsx"),
   index("routes/summary.tsx"),
   route("feed", "routes/feed.tsx"),
   route("winning-ads", "routes/winning-ads.tsx"),
@@ -11,6 +14,7 @@ export default [
   route("item/:kind/:id", "routes/item.tsx"),
   route("img", "routes/img.tsx"),
   route("admin/runs", "routes/admin-runs.tsx"),
+  route("admin/users", "routes/admin-users.tsx"),
   // 트렌드 뷰어 (Trend Radar): 페이지 + 플랫폼별 리소스 라우트
   route("radar", "routes/radar.tsx"),
   route("radar/api/videos", "routes/radar.api.videos.tsx"),

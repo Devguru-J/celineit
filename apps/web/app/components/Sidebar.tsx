@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/calendar", icon: "calendar_month", label: "캘린더" },
   { to: "/brands", icon: "domain", label: "브랜드" },
   { to: "/admin/runs", icon: "settings_applications", label: "수집 관리" },
+  { to: "/admin/users", icon: "group", label: "계정 관리" },
 ];
 
 export function Sidebar() {
@@ -51,18 +52,22 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Profile */}
+      {/* Profile + 로그아웃 */}
       <div className="mt-auto border-t border-white/10 px-2 pt-4">
-        <div className="flex cursor-pointer items-center gap-3 rounded border border-white/10 bg-black/28 p-2 transition-colors hover:bg-black/44">
+        <a
+          href="/logout"
+          title="로그아웃"
+          className="flex cursor-pointer items-center gap-3 rounded border border-white/10 bg-black/28 p-2 transition-colors hover:bg-black/44"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded bg-[#D8C28A] text-body-sm font-semibold text-black">
             CI
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="font-body-md text-body-md font-semibold truncate text-white">Celine Intelligence</p>
-            <p className="font-label-muted text-label-muted text-[#B8B8B8] truncate">내부 전용 툴</p>
+            <p className="font-label-muted text-label-muted text-[#B8B8B8] truncate">로그아웃</p>
           </div>
           <span className="material-symbols-outlined notranslate text-[20px] text-[#B8B8B8]">logout</span>
-        </div>
+        </a>
       </div>
     </aside>
   );

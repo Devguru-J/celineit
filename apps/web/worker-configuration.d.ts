@@ -6,6 +6,7 @@ interface Env {
   COLLECTOR_URL?: string;
   COLLECTOR_SECRET?: string;
   WEBSHARE_API_KEY?: string;
-  // 사이트 접근 코드(secret). 설정 시 전 요청이 접근 코드 게이트를 거친다. 미설정=게이트 off(로컬 dev).
-  SITE_ACCESS_CODE?: string;
+  // Supabase Auth (로그인 게이트 + /admin/users 계정 관리). 미설정=게이트 off(로컬 dev).
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_KEY?: string;
 }
