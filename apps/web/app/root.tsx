@@ -17,16 +17,19 @@ export const links: LinksFunction = () => [
     rel: "icon",
     href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23000000'/%3E%3Cpath d='M9 21h14v3H9zM9 15h10v3H9zM9 9h14v3H9z' fill='%23C8A45D'/%3E%3C/svg%3E",
   },
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
   { rel: "preconnect", href: "https://cdn.jsdelivr.net" },
+  // 아이콘 폰트는 셀프호스팅 서브셋(app.css @font-face) — 구글 CDN CSS 는
+  // 도착 전까지 리거처 텍스트("dashboard")가 노출되는 FOUT 이 있어 제거함.
   {
-    rel: "stylesheet",
-    href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+    rel: "preload",
+    href: "/fonts/material-symbols-outlined.woff2",
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap",
+    href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
   },
 ];
 
