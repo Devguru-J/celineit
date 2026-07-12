@@ -4,16 +4,17 @@
 // 설계: docs/superpowers/specs/2026-07-12-supabase-auth-login-design.md
 import { AsyncLocalStorage } from "node:async_hooks";
 
-type AuthConfig = { url: string; apiKey: string };
+type AuthConfig = { url: string; apiKey: string; signupCode?: string };
 
 // 워커 엔트리에서 요청별로 주입 (collector/webshare 와 동일 패턴)
 const authContext = new AsyncLocalStorage<AuthConfig | undefined>();
 export function runWithSupabaseAuth<T>(
   url: string | undefined,
   apiKey: string | undefined,
+  signupCode: string | undefined,
   cb: () => T,
 ): T {
-  return authContext.run(url && apiKey ? { url, apiKey } : undefined, cb);
+  return authContext.run(url && apiKey ? { url, apiKey, signupCode } : undefined, cb);
 }
 function getConfig(): AuthConfig | null {
   return authContext.getStore() ?? null;
@@ -62,6 +63,26 @@ export async function signInWithPassword(
       expiresIn: body.expires_in ?? 3600,
     },
   };
+}
+
+// ── 회원가입 (가입 코드 검증 → Admin API 생성 → 자동 로그인) ──
+// Supabase 의 공개 signup 은 쓰지 않는다(대시보드에서 OFF 유지) — 코드를 아는
+// 사람만 이 서버 경로로 가입할 수 있고, publishable key 우회 가입 구멍이 없다.
+export async function signUpWithCode(
+  email: string,
+  password: string,
+  code: string,
+): Promise<{ ok: true; tokens: TokenPair } | { ok: false; error: string }> {
+  const cfg = getConfig();
+  if (!cfg) return { ok: false, error: "인증 서버가 설정되지 않았습니다." };
+  if (!cfg.signupCode) return { ok: false, error: "현재 회원가입이 비활성화되어 있습니다. 관리자에게 문의하세요." };
+  if (code.trim().toLowerCase() !== cfg.signupCode.toLowerCase()) {
+    return { ok: false, error: "가입 코드가 올바르지 않습니다." };
+  }
+  const created = await createUser(email, password);
+  if (created.error) return { ok: false, error: created.error };
+  // 생성 직후 자동 로그인해 세션 쿠키까지 발급한다.
+  return signInWithPassword(email, password);
 }
 
 // ── 계정 관리 (Supabase Admin API, service key 필요) ──────────

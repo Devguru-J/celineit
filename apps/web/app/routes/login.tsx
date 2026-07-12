@@ -162,7 +162,11 @@ export default function Login() {
           </Form>
 
           <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-[12.5px] leading-relaxed text-white/45">
-            계정이 없거나 비밀번호를 잊은 경우 관리자에게 문의하세요.
+            계정이 없나요? 가입 코드가 있다면{" "}
+            <a href="/signup" className="font-semibold" style={{ color: GOLD }}>
+              회원가입
+            </a>
+            할 수 있습니다. 비밀번호를 잊은 경우 관리자에게 문의하세요.
           </div>
         </div>
       </div>

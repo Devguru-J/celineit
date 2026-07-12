@@ -23,7 +23,7 @@ export default {
     let response = await runWithDb(env.HYPERDRIVE.connectionString, () =>
       runWithCollector(env.COLLECTOR, () =>
         runWithWebshare(env.WEBSHARE_API_KEY, () =>
-          runWithSupabaseAuth(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, () =>
+          runWithSupabaseAuth(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, env.SIGNUP_CODE, () =>
             requestHandler(request),
           ),
         ),

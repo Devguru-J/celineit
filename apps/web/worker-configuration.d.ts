@@ -9,4 +9,6 @@ interface Env {
   // Supabase Auth (로그인 게이트 + /admin/users 계정 관리). 미설정=게이트 off(로컬 dev).
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_KEY?: string;
+  // 회원가입 코드 (/signup). 미설정 시 가입 비활성.
+  SIGNUP_CODE?: string;
 }

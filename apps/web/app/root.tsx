@@ -50,8 +50,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { pathname } = useLocation();
-  // 로그인 화면은 사이드바/탑바 없는 전체 화면 레이아웃
-  if (pathname === "/login") return <Outlet />;
+  // 로그인/가입 화면은 사이드바/탑바 없는 전체 화면 레이아웃
+  if (pathname === "/login" || pathname === "/signup") return <Outlet />;
   return (
     <>
       <Sidebar />

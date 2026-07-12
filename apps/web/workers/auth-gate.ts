@@ -66,8 +66,8 @@ export async function authGate(request: Request, env: Env): Promise<GateResult> 
   if (!supabaseUrl || !apiKey) return {}; // 게이트 off
 
   const url = new URL(request.url);
-  // 로그인/로그아웃은 미인증 상태에서 접근 가능해야 한다.
-  if (url.pathname === "/login" || url.pathname === "/logout") return {};
+  // 로그인/가입/로그아웃은 미인증 상태에서 접근 가능해야 한다.
+  if (url.pathname === "/login" || url.pathname === "/signup" || url.pathname === "/logout") return {};
 
   const accessToken = getCookie(request, AT_COOKIE);
   if (accessToken) {

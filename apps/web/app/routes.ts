@@ -3,6 +3,7 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 export default [
   // 인증 (게이트 제외 경로 — workers/auth-gate.ts)
   route("login", "routes/login.tsx"),
+  route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
   index("routes/summary.tsx"),
   route("feed", "routes/feed.tsx"),
