@@ -67,7 +67,12 @@ export async function authGate(request: Request, env: Env): Promise<GateResult> 
 
   const url = new URL(request.url);
   // 로그인/가입/로그아웃은 미인증 상태에서 접근 가능해야 한다.
-  if (url.pathname === "/login" || url.pathname === "/signup" || url.pathname === "/logout") return {};
+  // RR v7 클라이언트 내비게이션은 문서 경로가 아니라 "/signup.data"(single fetch)와
+  // "/__manifest"(라우트 매니페스트) 로 fetch 하므로 이 변형도 함께 열어야 한다 —
+  // 안 열면 폼 제출이 401 로 떨어져 빈 401 화면이 된다.
+  const docPath = url.pathname.replace(/\.data$/, "");
+  if (docPath === "/login" || docPath === "/signup" || docPath === "/logout") return {};
+  if (url.pathname === "/__manifest") return {}; // 라우트 메타데이터만 반환(민감정보 없음)
 
   const accessToken = getCookie(request, AT_COOKIE);
   if (accessToken) {
