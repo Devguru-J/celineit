@@ -120,6 +120,37 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
   );
 }
 
+// 모던 서피스 패널 — 1px 보더 대신 배경 층위 차이 + 부드러운 그림자 + 상단 하이라이트로 구획.
+export function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <section
+      className={`rounded-xl bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.4),0_12px_32px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.04)] ${className}`}
+    >
+      {children}
+    </section>
+  );
+}
+
+export function PanelHeader({
+  title,
+  caption,
+  action,
+}: {
+  title: string;
+  caption?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 sm:px-7 sm:pt-6">
+      <div className="min-w-0">
+        <h3 className="font-headline-sm text-headline-sm text-on-surface">{title}</h3>
+        {caption && <p className="mt-1 font-label-muted text-label-muted text-on-surface-variant">{caption}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
 export function CardHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-outline-variant/80 px-4 py-4 sm:px-container-padding">

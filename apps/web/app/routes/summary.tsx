@@ -47,6 +47,16 @@ export default function Summary() {
     platform,
     followers: followersByPlatform.get(platform) ?? null,
   }));
+  // 브랜드/플랫폼 비교: 서버가 계산한 활동 점수(팔로워+게시물+광고+반응 가중합)를
+  // 열(플랫폼) 내 상대 강도로 보여준다. 열 최고점 브랜드가 해당 채널 1위.
+  const matrixShown = matrix.slice(0, 8);
+  const maxTotalScore = Math.max(1, ...matrixShown.map((r) => r.totalScore));
+  const platformMaxScore = new Map(
+    ACTIVE_PLATFORMS.map((platform) => [
+      platform,
+      Math.max(0, ...matrixShown.map((r) => r.platforms.find((c) => c.platform === platform)?.score ?? 0)),
+    ]),
+  );
 
   return (
     <div className="space-y-card-gap p-4 sm:p-container-padding">
@@ -97,48 +107,115 @@ export default function Summary() {
       <div className="grid grid-cols-1 gap-card-gap xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader
-            title="브랜드 / 플랫폼 비교"
-            action={<span className="font-label-muted text-label-muted text-on-surface-variant">followers · posts · ads</span>}
+            title="브랜드 채널 경쟁력"
+            action={
+              <span className="inline-flex items-center gap-1.5 font-label-muted text-label-muted text-on-surface-variant">
+                <span className="material-symbols-outlined notranslate text-[14px] text-primary">star</span>
+                채널 1위 브랜드
+              </span>
+            }
           />
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-left">
+          <p className="px-4 pt-3 font-label-muted text-label-muted text-on-surface-variant sm:px-container-padding">
+            막대 = 채널 내 상대 활동 강도(팔로워·게시물·활성 광고·반응 종합). 활동 지수는 1위 브랜드를 100으로 둔 상대값입니다.
+          </p>
+          <div className="overflow-x-auto pb-2 pt-1">
+            <table className="w-full min-w-[720px] border-collapse text-left">
               <thead>
-                <tr className="bg-surface">
-                  <th className="border-b border-outline-variant px-container-padding py-3 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                <tr className="bg-white/[0.02]">
+                  <th className="px-container-padding py-3 font-label-caps text-label-caps uppercase text-on-surface-variant">
                     브랜드
                   </th>
+                  <th className="px-container-padding py-3 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                    활동 지수
+                  </th>
                   {ACTIVE_PLATFORMS.map((platform) => (
-                    <th key={platform} className="border-b border-outline-variant px-container-padding py-3 text-center">
+                    <th key={platform} className="px-3 py-3 text-center">
                       <PlatformChip platform={platform} withIcon />
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant">
-                {matrix.slice(0, 8).map((row) => (
-                  <tr key={row.slug} className="transition-colors hover:bg-surface-dim/30">
-                    <td className="px-container-padding py-3">
-                      <Link to={`/trends?brand=${row.slug}&platform=all`} className="flex items-center gap-3">
-                        <BrandLogo slug={row.slug} name={row.brand} className="h-8 w-8 shrink-0" />
-                        <span className="font-body-sm text-body-sm font-semibold">{row.brand}</span>
-                      </Link>
-                    </td>
-                    {row.platforms.map((cell) => (
-                      <td key={cell.platform} className="px-container-padding py-3">
-                        <div className="mx-auto max-w-[132px] rounded border border-outline-variant/70 bg-surface-container-lowest p-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-label-muted text-[10px] text-on-surface-variant">팔로워</span>
-                            <span className="font-body-sm text-body-sm tabular-nums">{cell.followers != null ? shortNumber(cell.followers) : "—"}</span>
-                          </div>
-                          <div className="mt-1 flex items-center justify-between gap-2">
-                            <span className="font-label-muted text-[10px] text-on-surface-variant">게시/광고</span>
-                            <span className="font-body-sm text-body-sm tabular-nums">{cell.posts}/{cell.activeAds}</span>
+              <tbody className="divide-y divide-white/5">
+                {matrixShown.map((row, rank) => {
+                  const activity = Math.round((row.totalScore / maxTotalScore) * 100);
+                  return (
+                    <tr key={row.slug} className="transition-colors duration-200 hover:bg-surface-container-low/50">
+                      <td className="px-container-padding py-4">
+                        <Link to={`/trends?brand=${row.slug}&platform=all`} className="group flex items-center gap-3">
+                          <span
+                            className={`w-5 shrink-0 text-center font-metric-md text-[15px] tabular-nums ${
+                              rank === 0 ? "text-primary" : "text-on-surface-variant"
+                            }`}
+                          >
+                            {rank + 1}
+                          </span>
+                          <BrandLogo slug={row.slug} name={row.brand} className="h-8 w-8 shrink-0" />
+                          <span className="font-body-sm text-body-sm font-semibold transition-colors group-hover:text-primary">
+                            {row.brand}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-container-padding py-4">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-8 text-right font-body-md text-body-md font-semibold tabular-nums">{activity}</span>
+                          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/5">
+                            <div
+                              className={`h-full rounded-full ${rank === 0 ? "bg-primary" : "bg-primary/45"}`}
+                              style={{ width: `${activity}%` }}
+                            />
                           </div>
                         </div>
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                      {row.platforms.map((cell) => {
+                        const colMax = platformMaxScore.get(cell.platform) ?? 0;
+                        const strength = colMax > 0 ? cell.score / colMax : 0;
+                        const isLeader = colMax > 0 && cell.score === colMax;
+                        const isAdChannel = cell.platform === "meta_ads";
+                        // 대표 지표: 광고 채널은 활성 광고 수, 콘텐츠 채널은 팔로워 —
+                        // 팔로워 미수집 채널(IG 등)은 반응 합계를 대신 보여준다.
+                        const primary = isAdChannel
+                          ? cell.activeAds > 0
+                            ? `광고 ${cell.activeAds}개`
+                            : "—"
+                          : cell.followers != null
+                            ? shortNumber(cell.followers)
+                            : cell.engagement > 0
+                              ? `반응 ${shortNumber(cell.engagement)}`
+                              : "—";
+                        const sub = isAdChannel
+                          ? cell.engagement > 0
+                            ? `반응 ${shortNumber(cell.engagement)}`
+                            : "집행 중 소재"
+                          : `게시물 ${cell.posts}${
+                              cell.followers != null && cell.engagement > 0 ? ` · 반응 ${shortNumber(cell.engagement)}` : ""
+                            }`;
+                        return (
+                          <td key={cell.platform} className="px-3 py-4">
+                            <div className="mx-auto w-full max-w-[140px]">
+                              <div className="flex items-baseline justify-between gap-1.5">
+                                <span className={`font-body-md text-body-md font-semibold tabular-nums ${strength === 0 ? "text-on-surface-variant" : ""}`}>
+                                  {primary}
+                                </span>
+                                {isLeader && (
+                                  <span className="material-symbols-outlined notranslate text-[14px] text-primary" title="채널 1위">
+                                    star
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 truncate font-label-muted text-[10px] tabular-nums text-on-surface-variant">{sub}</p>
+                              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/5">
+                                <div
+                                  className={`h-full rounded-full ${isLeader ? "bg-primary" : "bg-primary/40"}`}
+                                  style={{ width: `${Math.round(strength * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

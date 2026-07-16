@@ -50,6 +50,10 @@ export default {
         "on-secondary-fixed": "#F4F4F4",
         surface: "#181818",
         "outline-variant": "#3A3A3A",
+        // 상태 시맨틱 컬러 — 다크 배경 위에서 눈이 편한 저채도 톤 (승인/대기/위험)
+        success: "#6FBF9B",
+        warning: "#E5B567",
+        danger: "#E08F8F",
         "on-tertiary-container": "#F4F4F4",
         "on-secondary-container": "#F4F4F4",
         "primary-container": "#D8C28A",
