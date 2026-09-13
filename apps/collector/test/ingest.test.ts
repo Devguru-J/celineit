@@ -105,6 +105,22 @@ describe("광고 적재 + longevity", () => {
     expect(a1.isActive).toBe(true);
   });
 
+  it("상한에 잘린(truncated) 스크래이프는 안 보인 광고를 비활성화하지 않는다", async () => {
+    // 20건 관측 → 다음날 상한 15로 잘려 15건만 관측. 나머지 5건은 "종료"가 아니라 "미관측".
+    const ids = Array.from({ length: 20 }, (_, i) => `T${i}`);
+    await ingestResult(db, { brandAccountId: accountId, platform: "meta_ads", date: "2026-06-01", result: adResult(ids) });
+    const stats = await ingestResult(db, {
+      brandAccountId: accountId,
+      platform: "meta_ads",
+      date: "2026-06-02",
+      result: adResult(ids.slice(0, 15)),
+      truncated: true,
+    });
+    expect(stats.adsInactivated).toBe(0);
+    const active = await db.select().from(adsTable).where(eq(adsTable.isActive, true));
+    expect(active).toHaveLength(20);
+  });
+
   it("미디어를 media_assets 에 멱등하게 연결한다", async () => {
     const p = { brandAccountId: accountId, platform: "meta_ads" as const, date: "2026-06-01", result: adResult(["A1"]) };
     const s1 = await ingestResult(db, p);

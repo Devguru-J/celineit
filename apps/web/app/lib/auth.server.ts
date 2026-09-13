@@ -4,7 +4,7 @@
 // 설계: docs/superpowers/specs/2026-07-12-supabase-auth-login-design.md
 import { AsyncLocalStorage } from "node:async_hooks";
 
-type AuthConfig = { url: string; apiKey: string; signupCode?: string };
+type AuthConfig = { url: string; apiKey: string; signupCode?: string; adminEmails: string[] };
 
 // 워커 엔트리에서 요청별로 주입 (collector/webshare 와 동일 패턴)
 const authContext = new AsyncLocalStorage<AuthConfig | undefined>();
@@ -13,11 +13,47 @@ export function runWithSupabaseAuth<T>(
   apiKey: string | undefined,
   signupCode: string | undefined,
   cb: () => T,
+  opts: { adminEmails?: string } = {},
 ): T {
-  return authContext.run(url && apiKey ? { url, apiKey, signupCode } : undefined, cb);
+  const adminEmails = (opts.adminEmails ?? "")
+    .split(/[,\s]+/)
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return authContext.run(url && apiKey ? { url, apiKey, signupCode, adminEmails } : undefined, cb);
 }
 function getConfig(): AuthConfig | null {
   return authContext.getStore() ?? null;
+}
+
+// ── 관리자 권한 ─────────────────────────────────────────────
+// ADMIN_EMAILS(쉼표 구분) 가 설정되면 그 계정만 /admin/* (계정 관리·유료 수집 실행) 에 접근한다.
+// 미설정이면 기존처럼 로그인한 모든 계정이 관리자(소규모 내부 팀 기본값).
+export function isAdminRequest(request: Request): boolean {
+  const cfg = getConfig();
+  if (!cfg || cfg.adminEmails.length === 0) return true;
+  const email = jwtEmail(getCookie(request, AT_COOKIE) ?? "");
+  return !!email && cfg.adminEmails.includes(email.toLowerCase());
+}
+export function requireAdmin(request: Request): void {
+  if (!isAdminRequest(request)) throw new Response("Forbidden", { status: 403 });
+}
+
+// ── 가입 코드 무차별 대입 완화 ──────────────────────────────
+// isolate 단위 인메모리 카운터라 완전한 방어는 아니지만, 요청 속도로 코드를 돌려보는 시도를
+// 크게 늦춘다(같은 isolate 에서 10분에 IP 당 10회).
+const SIGNUP_WINDOW_MS = 10 * 60_000;
+const SIGNUP_MAX_ATTEMPTS = 10;
+const signupAttempts = new Map<string, { count: number; resetAt: number }>();
+export function signupRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const cur = signupAttempts.get(ip);
+  if (!cur || cur.resetAt < now) {
+    signupAttempts.set(ip, { count: 1, resetAt: now + SIGNUP_WINDOW_MS });
+    if (signupAttempts.size > 1000) signupAttempts.clear(); // 메모리 상한
+    return false;
+  }
+  cur.count++;
+  return cur.count > SIGNUP_MAX_ATTEMPTS;
 }
 
 export type TokenPair = { accessToken: string; refreshToken: string; expiresIn: number };
@@ -175,4 +211,17 @@ export function getCookie(request: Request, name: string): string | null {
     if (part.slice(0, eq).trim() === name) return decodeURIComponent(part.slice(eq + 1).trim());
   }
   return null;
+}
+
+/** 서명 검증 없이 JWT payload 의 email 만 읽는다 — 게이트가 검증을 마친 토큰에만 사용할 것. */
+export function jwtEmail(token: string): string | null {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(json) as { email?: unknown };
+    return typeof payload.email === "string" ? payload.email : null;
+  } catch {
+    return null;
+  }
 }

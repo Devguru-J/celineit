@@ -6,7 +6,7 @@
 //
 // actor override (선택): APIFY_ACTOR_META_ADS / _INSTAGRAM / _TWITTER / _TIKTOK
 import { brandAccounts, brands, createDb } from "@celine/db";
-import { ACTIVE_PLATFORMS, type Platform } from "@celine/shared";
+import { ACTIVE_PLATFORMS, META_ADS_DEFAULT_MAX_ITEMS, jstDate, type Platform } from "@celine/shared";
 import { and, eq } from "drizzle-orm";
 import { ApifyClient } from "./apify";
 import { collectAccount } from "./collect";
@@ -28,8 +28,11 @@ async function main() {
 
   const db = createDb(databaseUrl);
   const apify = new ApifyClient(apifyToken);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = jstDate();
   const max = Number(arg("max") ?? 50);
+  // Meta Ads 는 워커와 동일하게 별도의 낮은 상한을 적용한다(--max 로 키울 수 없음).
+  const metaEnv = Number(process.env.META_ADS_MAX_ITEMS);
+  const metaMax = Math.min(Number.isFinite(metaEnv) && metaEnv >= 1 ? metaEnv : META_ADS_DEFAULT_MAX_ITEMS, max);
 
   const brandSlug = arg("brand");
   const onlyPlatform = arg("platform") as Platform | undefined;
@@ -74,7 +77,11 @@ async function main() {
         profileUrl: t.profileUrl,
         apifyInput: t.apifyInput as Record<string, unknown> | null,
       },
-      { date: today, maxItems: max, actorOverride: actorOverride(t.platform as Platform) },
+      {
+        date: today,
+        maxItems: t.platform === "meta_ads" ? metaMax : max,
+        actorOverride: actorOverride(t.platform as Platform),
+      },
     );
     if (res.error) console.log(`실패: ${res.error}`);
     else

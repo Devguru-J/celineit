@@ -13,6 +13,18 @@ export const ACTIVE_PLATFORMS: Platform[] = ["meta_ads", "instagram", "twitter",
 // 전체 지역을 원하면 "ALL" 로 변경.
 export const TARGET_COUNTRY = "JP";
 
+// 일본 시장 대상 — 수집 "기준일"과 웹의 "하루" 경계는 모두 JST(UTC+9, DST 없음).
+// Workers/Node 런타임은 UTC 라 toISOString().slice(0,10) 을 그대로 쓰면 00:00~08:59 JST 에
+// 어제 날짜로 스냅샷이 기록/덮어써진다.
+export const JST_OFFSET_MS = 9 * 3_600_000;
+export function jstDate(d: Date = new Date()): string {
+  return new Date(d.getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+// Meta Ads 는 run 당 비용이 압도적으로 높아(전체 비용의 ~70%) 별도의 낮은 기본 상한을 둔다.
+// 워커(META_ADS_MAX_ITEMS)와 로컬 러너가 같은 기본값을 공유한다.
+export const META_ADS_DEFAULT_MAX_ITEMS = 15;
+
 export type AdFormat = "image" | "video" | "carousel";
 
 // Apify actor 기본값 — 환경변수(APIFY_ACTOR_<PLATFORM>)로 override 가능.

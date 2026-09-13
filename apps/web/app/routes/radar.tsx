@@ -55,6 +55,11 @@ const PERIODS: { key: string; label: string }[] = [
   { key: "month", label: "이번 달" },
 ];
 
+// 세션이 만료되면 게이트가 fetch 에 401 JSON 을 돌려준다 — 빈 화면 대신 로그인으로 보낸다.
+function redirectToLogin() {
+  window.location.assign("/login?next=" + encodeURIComponent(window.location.pathname + window.location.search));
+}
+
 export default function Radar({ loaderData }: { loaderData: { categories: string[]; nowMs: number } }) {
   const { categories, nowMs } = loaderData;
 
@@ -105,7 +110,10 @@ export default function Radar({ loaderData }: { loaderData: { categories: string
       if (search) q.set("q", search);
       if (opts.force) q.set("force", "1");
       try {
-        const d: any = await (await fetch("/radar/api/videos?" + q)).json();
+        const res = await fetch("/radar/api/videos?" + q);
+        if (res.status === 401) return redirectToLogin();
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const d: any = await res.json();
         if (seq !== seqRef.current) return;
         const list: Video[] = d.videos ?? [];
         setVideos(list);
@@ -125,10 +133,16 @@ export default function Radar({ loaderData }: { loaderData: { categories: string
     setLoading(true);
     setErrored(false);
     try {
-      const d: any = await (await fetch(`/radar/api/${t}${force ? "?force=1" : ""}`)).json();
+      const res = await fetch(`/radar/api/${t}${force ? "?force=1" : ""}`);
+      if (res.status === 401) return redirectToLogin();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d: any = await res.json();
       if (seq !== seqRef.current) return;
       setFetchedAt(d.fetchedAt);
-      if (t === "ai") setAi({ models: d.models, news: d.news });
+      if (t === "ai") {
+        if (!d.models) throw new Error(d.error ?? "AI 데이터 없음");
+        setAi({ models: d.models, news: d.news ?? [] });
+      }
       else if (t === "reels") {
         setReels(d.reels ?? []);
         setReelsAcc(d.accounts ?? []);

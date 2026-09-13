@@ -6,3 +6,7 @@ CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://postgres.
 # 관리 > 수집 관리 화면에서 collector worker의 수동 수집 API를 호출할 때 사용.
 COLLECTOR_URL="http://localhost:8788"
 COLLECTOR_SECRET="local-manual-collect-secret"
+
+# 관리자 이메일(쉼표 구분). 설정하면 /admin/runs, /admin/users 는 이 계정만 접근 가능.
+# 비워두면 로그인한 모든 계정이 관리자(내부 소규모 팀 기본값).
+# ADMIN_EMAILS="admin@company.com,ops@company.com"

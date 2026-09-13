@@ -26,17 +26,26 @@ export function pick<T = unknown>(obj: unknown, ...keys: string[]): T | undefine
   return undefined;
 }
 
+// 지표(좋아요·댓글·조회·팔로워)는 항상 0 이상. Instagram 은 좋아요 숨김 게시물을 -1 로
+// 내려주므로 음수는 "값 없음"으로 취급한다 — 그대로 저장하면 합계/정렬이 왜곡된다.
 export function num(v: unknown): number | undefined {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string") {
-    const n = Number(v.replace(/[,\s]/g, ""));
-    if (Number.isFinite(n)) return n;
+  let n: number | undefined;
+  if (typeof v === "number" && Number.isFinite(v)) n = v;
+  else if (typeof v === "string") {
+    const parsed = Number(v.replace(/[,\s]/g, ""));
+    if (Number.isFinite(parsed)) n = parsed;
   }
-  return undefined;
+  return n === undefined || n < 0 ? undefined : n;
 }
 
 export function str(v: unknown): string | undefined {
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   return undefined;
+}
+
+/** apify_input 의 resultsLimit 은 시스템 상한(maxItems)보다 작을 때만 존중한다. */
+export function capResultsLimit(requested: unknown, maxItems: number): number {
+  const r = typeof requested === "number" && Number.isFinite(requested) && requested >= 1 ? Math.floor(requested) : undefined;
+  return r === undefined ? maxItems : Math.min(r, maxItems);
 }

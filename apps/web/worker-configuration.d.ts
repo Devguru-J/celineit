@@ -11,4 +11,6 @@ interface Env {
   SUPABASE_SERVICE_KEY?: string;
   // 회원가입 코드 (/signup). 미설정 시 가입 비활성.
   SIGNUP_CODE?: string;
+  // 관리자 이메일 목록(쉼표 구분). 설정 시 /admin/* 은 이 계정만 접근. 미설정=전원 관리자.
+  ADMIN_EMAILS?: string;
 }

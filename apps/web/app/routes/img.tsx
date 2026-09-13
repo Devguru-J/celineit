@@ -4,7 +4,9 @@ const ALLOWED = [
   /\.cdninstagram\.com$/i,
   /\.fbcdn\.net$/i,
   /\.twimg\.com$/i,
-  /tiktokcdn/i,
+  // p16-sign-va.tiktokcdn.com / v16m.tiktokcdn-us.com / *.tiktokcdn-eu.com 등.
+  // 부분 문자열 매칭("tiktokcdn.evil.com" 통과)이 아니라 등록 도메인으로 고정한다.
+  /\.tiktokcdn(-[a-z]{2,3})?\.com$/i,
   /\.pstatp\.com$/i,
   // 트렌드 뷰어(유튜브 썸네일·HF 이미지 등) 추가 허용
   /\.ytimg\.com$/i,

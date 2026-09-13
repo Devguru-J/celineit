@@ -9,9 +9,11 @@ export function meta() {
 
 export async function loader({ params }: { params: { kind: string; id: string } }) {
   const kind = params.kind === "ad" ? "ad" : "post";
-  const detail = await getItemDetail(kind, params.id);
+  const [detail, similar] = await Promise.all([
+    getItemDetail(kind, params.id),
+    kind === "post" ? getSimilarPosts(params.id) : Promise.resolve([]),
+  ]);
   if (!detail) throw new Response("Not Found", { status: 404 });
-  const similar = kind === "post" ? await getSimilarPosts(params.id) : [];
   return { detail, similar };
 }
 

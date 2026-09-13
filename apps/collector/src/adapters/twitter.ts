@@ -53,7 +53,7 @@ export const twitterAdapter: PlatformAdapter = {
       const post: NormalizedPost = {
         platformPostId,
         caption: str(pick(item, "text", "full_text", "fullText")) ?? null,
-        format: hasVideo ? "video" : mediaUrls.length > 1 ? "carousel" : mediaUrls.length ? "image" : "image",
+        format: hasVideo ? "video" : mediaUrls.length > 1 ? "carousel" : "image",
         permalink: str(pick(item, "url", "twitterUrl")) ?? null,
         postedAt: str(pick(item, "createdAt", "created_at")) ?? null,
         mediaUrls,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Form, useActionData, useLoaderData, useNavigation, useRevalidator } from "react-router";
 import { ACTIVE_PLATFORMS } from "@celine/shared";
 import { KpiDelta, Panel, PanelHeader, PlatformChip } from "~/components/ui";
+import { requireAdmin } from "~/lib/auth.server";
 import { getCollector } from "~/lib/collector.server";
 import { getCollectableAccounts, getRuns, getRunStats } from "~/lib/queries.server";
 import type { Platform } from "~/lib/platform";
@@ -10,7 +11,8 @@ export function meta() {
   return [{ title: "Celine Intelligence · 수집 실행 현황" }];
 }
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
+  requireAdmin(request);
   const [runs, summary, collectable] = await Promise.all([getRuns(), getRunStats(), getCollectableAccounts()]);
   return { runs, summary, collectable };
 }
@@ -19,26 +21,27 @@ type ActionData =
   | { ok: true; queued: number; skipped: number; requested: number; date: string; maxItems: number }
   | { ok: false; error: string };
 
-function envFromContext(context: unknown) {
-  const c = context as { cloudflare?: { env?: Partial<Env> }; env?: Partial<Env> } | undefined;
+// workers/app.ts 는 requestHandler 에 load context 를 넘기지 않으므로 env 는 process.env
+// (nodejs_compat 가 populate) 로만 읽는다.
+function collectorEnv() {
   const runtimeProcess = globalThis as typeof globalThis & {
     process?: { env?: Record<string, string | undefined> };
   };
   return {
-    ...(c?.cloudflare?.env ?? c?.env ?? {}),
-    COLLECTOR_URL: c?.cloudflare?.env?.COLLECTOR_URL ?? c?.env?.COLLECTOR_URL ?? runtimeProcess.process?.env?.COLLECTOR_URL,
-    COLLECTOR_SECRET: c?.cloudflare?.env?.COLLECTOR_SECRET ?? c?.env?.COLLECTOR_SECRET ?? runtimeProcess.process?.env?.COLLECTOR_SECRET,
+    COLLECTOR_URL: runtimeProcess.process?.env?.COLLECTOR_URL,
+    COLLECTOR_SECRET: runtimeProcess.process?.env?.COLLECTOR_SECRET,
   };
 }
 
-export async function action({ request, context }: { request: Request; context?: unknown }): Promise<ActionData> {
+export async function action({ request }: { request: Request }): Promise<ActionData> {
+  requireAdmin(request);
   const formData = await request.formData();
   const accountIds = [...new Set(formData.getAll("accountId").filter((v): v is string => typeof v === "string" && v.length > 0))];
   const maxItemsRaw = Number(formData.get("maxItems") ?? 50);
   const maxItems = Number.isFinite(maxItemsRaw) ? Math.max(1, Math.min(200, Math.floor(maxItemsRaw))) : 50;
   if (accountIds.length === 0) return { ok: false, error: "수집할 브랜드/매체 조합을 선택해 주세요." };
 
-  const env = envFromContext(context);
+  const env = collectorEnv();
   const collector = getCollector();
   if (!env.COLLECTOR_SECRET) {
     return { ok: false, error: "COLLECTOR_SECRET 설정이 없습니다." };

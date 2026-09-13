@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy": "wrangler deploy",
-    "dev:worker": "wrangler dev"
+    "dev:worker": "wrangler dev",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@celine/db": "*",

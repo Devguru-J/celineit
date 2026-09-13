@@ -13,22 +13,34 @@ const requestHandler = createRequestHandler(
 );
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     // Supabase Auth 세션 게이트. RR 핸들러보다 먼저 — 미인증 요청은 DB 컨텍스트도
     // 열지 않고 끊는다. (SUPABASE_URL/SERVICE_KEY 미설정 시 게이트 off)
     const { block, setCookies } = await authGate(request, env);
     if (block) return block;
     // DB 와 수집기 바인딩을 요청 컨텍스트(AsyncLocalStorage)로 전달.
     // Service Binding(COLLECTOR)은 string 이 아니라 process.env 로는 못 읽으므로 여기서 넘긴다.
-    let response = await runWithDb(env.HYPERDRIVE.connectionString, () =>
+    const { result, close } = runWithDb(env.HYPERDRIVE.connectionString, () =>
       runWithCollector(env.COLLECTOR, () =>
         runWithWebshare(env.WEBSHARE_API_KEY, () =>
-          runWithSupabaseAuth(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, env.SIGNUP_CODE, () =>
-            requestHandler(request),
+          runWithSupabaseAuth(
+            env.SUPABASE_URL,
+            env.SUPABASE_SERVICE_KEY,
+            env.SIGNUP_CODE,
+            () => requestHandler(request),
+            { adminEmails: env.ADMIN_EMAILS },
           ),
         ),
       ),
     );
+    let response: Response;
+    try {
+      response = await result;
+    } finally {
+      // 요청마다 새 postgres 풀을 여므로 응답 후 반드시 반납 — 안 하면 isolate 수명 동안
+      // 소켓이 누적돼 Workers 동시 연결 상한(6)에 걸려 간헐적 DB 오류가 난다.
+      ctx.waitUntil(close().catch(() => {}));
+    }
     // 게이트가 access token 을 재발급했으면 새 세션 쿠키를 응답에 부착한다.
     if (setCookies?.length) {
       response = new Response(response.body, response);

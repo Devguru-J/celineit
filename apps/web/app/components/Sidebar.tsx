@@ -1,6 +1,6 @@
 import { NavLink } from "react-router";
 
-type NavItem = { to: string; icon: string; label: string; end?: boolean };
+type NavItem = { to: string; icon: string; label: string; end?: boolean; admin?: boolean };
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", icon: "dashboard", label: "요약", end: true },
@@ -10,11 +10,12 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/radar", icon: "radar", label: "트렌드 뷰어" },
   { to: "/calendar", icon: "calendar_month", label: "캘린더" },
   { to: "/brands", icon: "domain", label: "브랜드" },
-  { to: "/admin/runs", icon: "settings_applications", label: "수집 관리" },
-  { to: "/admin/users", icon: "group", label: "계정 관리" },
+  { to: "/admin/runs", icon: "settings_applications", label: "수집 관리", admin: true },
+  { to: "/admin/users", icon: "group", label: "계정 관리", admin: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ userEmail, isAdmin = true }: { userEmail?: string | null; isAdmin?: boolean }) {
+  const items = NAV_ITEMS.filter((i) => !i.admin || isAdmin);
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-full w-[248px] flex-col border-r border-[#2C2C2C] bg-[#1C1C1C] px-stack-sm py-container-padding shadow-[8px_0_32px_rgba(0,0,0,0.16)] lg:flex">
       {/* Brand header */}
@@ -32,7 +33,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -59,11 +60,13 @@ export function Sidebar() {
           title="로그아웃"
           className="flex cursor-pointer items-center gap-3 rounded border border-white/10 bg-black/28 p-2 transition-colors hover:bg-black/44"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-[#D8C28A] text-body-sm font-semibold text-black">
-            CI
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-[#D8C28A] text-body-sm font-semibold uppercase text-black">
+            {userEmail ? userEmail.slice(0, 2) : "CI"}
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="font-body-md text-body-md font-semibold truncate text-white">Celine Intelligence</p>
+            <p className="font-body-md text-body-md font-semibold truncate text-white" title={userEmail ?? undefined}>
+              {userEmail ?? "Celine Intelligence"}
+            </p>
             <p className="font-label-muted text-label-muted text-[#B8B8B8] truncate">로그아웃</p>
           </div>
           <span className="material-symbols-outlined notranslate text-[20px] text-[#B8B8B8]">logout</span>

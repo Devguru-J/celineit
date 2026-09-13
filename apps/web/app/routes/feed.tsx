@@ -29,6 +29,7 @@ function parseFilters(qs: URLSearchParams) {
       .split(",")
       .filter((f): f is FormatKey => (FORMAT_KEYS as readonly string[]).includes(f)),
     sinceDays: [7, 30, 90].includes(periodRaw) ? periodRaw : null,
+    q: (qs.get("q") ?? "").trim().slice(0, 100),
     limit: Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(600, Math.floor(limitRaw)) : PAGE_SIZE,
   };
 }
@@ -69,7 +70,7 @@ export default function Feed() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
   const loading = navigation.state !== "idle";
-  const { platform, kind, brandSlug, formats, sinceDays } = parseFilters(searchParams);
+  const { platform, kind, brandSlug, formats, sinceDays, q } = parseFilters(searchParams);
   const formatSet = new Set<FormatKey>(formats);
 
   // 필터 변경 시 limit(페이지) 리셋. "all"/빈 값은 파라미터 삭제로 URL 을 깨끗하게 유지.
@@ -181,6 +182,24 @@ export default function Feed() {
             ))}
           </div>
         </div>
+
+        {/* 검색어 칩 (상단바 검색 → ?q=) */}
+        {q && (
+          <>
+            <Divider />
+            <div className="flex flex-col gap-1">
+              <GroupLabel>검색</GroupLabel>
+              <button
+                onClick={() => setParam("q", null)}
+                title="검색어 지우기"
+                className="flex items-center gap-1 rounded-full bg-primary/15 px-3 py-1 font-body-sm text-body-sm text-primary hover:bg-primary/25"
+              >
+                “{q}”
+                <span className="material-symbols-outlined notranslate text-[16px]">close</span>
+              </button>
+            </div>
+          </>
+        )}
 
         {/* 기간 (우측 pill) + 카운트 */}
         <div className="ml-auto flex items-center gap-3">

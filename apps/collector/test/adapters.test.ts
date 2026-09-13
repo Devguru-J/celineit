@@ -110,3 +110,32 @@ describe("방어적 파싱", () => {
     expect(getAdapter("instagram").normalize([{}]).posts).toHaveLength(0);
   });
 });
+
+describe("buildInput 비용 상한", () => {
+  const acct = { id: "x", platform: "meta_ads" as const, handle: "anua", profileUrl: null, apifyInput: null };
+
+  it("meta_ads: resultsLimit 이 항상 maxItems 로 들어간다", () => {
+    const input = getAdapter("meta_ads").buildInput(acct, { maxItems: 15 }) as Record<string, unknown>;
+    expect(input.resultsLimit).toBe(15);
+  });
+
+  it("apify_input 의 resultsLimit 은 상한을 키우지 못한다(줄이는 건 허용)", () => {
+    const bigger = getAdapter("meta_ads").buildInput({ ...acct, apifyInput: { resultsLimit: 500 } }, { maxItems: 15 }) as Record<string, unknown>;
+    expect(bigger.resultsLimit).toBe(15);
+    const smaller = getAdapter("instagram").buildInput(
+      { ...acct, platform: "instagram", apifyInput: { resultsLimit: 5 } },
+      { maxItems: 50 },
+    ) as Record<string, unknown>;
+    expect(smaller.resultsLimit).toBe(5);
+  });
+});
+
+describe("지표 정규화", () => {
+  it("instagram 숨김 좋아요(-1)는 값 없음으로 취급한다", () => {
+    const r = getAdapter("instagram").normalize([
+      { id: "hidden1", type: "Image", likesCount: -1, commentsCount: 3, timestamp: "2026-06-01T00:00:00.000Z" },
+    ]);
+    expect(r.posts[0].metrics.likes).toBeUndefined();
+    expect(r.posts[0].metrics.comments).toBe(3);
+  });
+});

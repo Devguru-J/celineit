@@ -1,5 +1,5 @@
 import { type NormalizedAd, type NormalizedResult, TARGET_COUNTRY, emptyResult, landingDomainOf } from "@celine/shared";
-import { pick, str, type AccountInput, type PlatformAdapter } from "./types";
+import { capResultsLimit, pick, str, type AccountInput, type PlatformAdapter } from "./types";
 
 // Meta Ad Library 스크래퍼 (apify/facebook-ads-scraper).
 // 입력: Ad Library 검색 URL(startUrls). 출력: adArchiveID + snapshot{body,images,videos,linkUrl,...}.
@@ -17,10 +17,12 @@ export const metaAdsAdapter: PlatformAdapter = {
     // ⚠️ 이 actor(apify/facebook-ads-scraper)는 `maxItems`/`count` 를 무시하고
     // 키워드에 매칭되는 광고를 전부 긁어온다(실측: limit=50 인데 271~818건 반환, 건당 $0.005).
     // 실제로 존중하는 파라미터는 `resultsLimit`(URL당 결과 상한) 이므로 이걸로 상한을 건다.
+    // extra(brand_accounts.apify_input) 가 resultsLimit 을 더 크게 덮어써 비용 상한을
+    // 우회하지 못하도록, extra 를 먼저 펼치고 상한을 마지막에 확정한다.
     return {
       startUrls: [{ url: searchUrl }],
-      resultsLimit: opts.maxItems,
       ...extra,
+      resultsLimit: capResultsLimit(extra.resultsLimit, opts.maxItems),
     };
   },
 

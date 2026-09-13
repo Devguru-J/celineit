@@ -18,6 +18,12 @@ export interface IngestParams {
   platform: Platform;
   date: string; // YYYY-MM-DD (수집 기준일)
   result: NormalizedResult;
+  /**
+   * 이번 스크래이프가 상한(resultsLimit)에 걸려 잘렸는지. 잘린 결과는 "안 보인 광고 =
+   * 종료된 광고"가 아니므로 비활성 sweep 을 건너뛴다. (Meta Ads 는 상한 15 vs 실제 수백 건 —
+   * sweep 을 돌리면 매 run 마다 활성 광고 대부분이 inactive 로 뒤집힌다.)
+   */
+  truncated?: boolean;
 }
 
 export interface IngestStats {
@@ -106,7 +112,8 @@ export async function ingestResult(db: Database, params: IngestParams): Promise<
 
   // ── 오늘 안 보인 활성 광고 → 비활성 처리 (longevity 종료) ──
   // 실패/빈 스크래이프로 전체를 비활성화하는 사고를 막기 위해, 광고가 1건 이상 관측된 경우에만 수행.
-  if (result.ads.length > 0) {
+  // 상한에 잘린(truncated) 스크래이프는 전수 관측이 아니므로 역시 건너뛴다.
+  if (result.ads.length > 0 && !params.truncated) {
     const stale = await db
       .update(adsTable)
       .set({ isActive: false })

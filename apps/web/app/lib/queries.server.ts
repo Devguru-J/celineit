@@ -13,7 +13,7 @@ import {
   posts as postsT,
 } from "@celine/db";
 import { ACTIVE_PLATFORMS, FOCUS_KEYWORDS, type Platform } from "@celine/shared";
-import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 import { getDb } from "./db.server";
 
 // 일본 시장 대상 제품이므로 "하루" 경계와 날짜·시각 표기는 JST(UTC+9, DST 없음) 기준으로 한다.
@@ -96,7 +96,13 @@ export type FeedFilters = {
   formats?: ("image" | "video" | "carousel")[];
   sinceDays?: number | null; // 7 | 30 | 90 (JST 기준)
   limit?: number; // 게시물 상한 (광고는 절반)
+  q?: string; // 브랜드명·캡션·광고 문구 부분 일치(대소문자 무시)
 };
+
+// ILIKE 패턴 이스케이프 — 사용자 입력의 % _ \ 가 와일드카드로 해석되지 않게.
+function likePattern(q: string): string {
+  return `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
 
 // 필터 옵션용 브랜드 목록 (slug 기준 서버측 필터에 사용)
 export async function getBrandOptions() {
@@ -123,10 +129,12 @@ export async function getFeed(
     kind !== "post" && (platform === "all" || platform === "meta_ads" || platform === "tiktok_ads");
 
   const sinceUtc = filters.sinceDays ? jstDayStartUtc(-filters.sinceDays) : null;
+  const q = filters.q?.trim().slice(0, 100) || null;
+  const qPattern = q ? likePattern(q) : null;
 
-  const postRows = !wantPosts
-    ? []
-    : await db
+  const postQuery = !wantPosts
+    ? Promise.resolve([])
+    : db
         .select({
           id: postsT.id,
           brand: brandsT.name,
@@ -148,15 +156,18 @@ export async function getFeed(
             ...(brandSlug !== "all" ? [eq(brandsT.slug, brandSlug)] : []),
             ...(formats.length ? [inArray(postsT.format, formats)] : []),
             ...(sinceUtc ? [gte(postsT.postedAt, sinceUtc)] : []),
+            ...(qPattern
+              ? [or(ilike(postsT.caption, qPattern), ilike(brandsT.name, qPattern), ilike(brandAccounts.handle, qPattern))]
+              : []),
           ),
         )
         .groupBy(postsT.id, brandsT.name, brandAccounts.platform)
         .orderBy(desc(postsT.postedAt))
         .limit(postLimit);
 
-  const adRows = !wantAds
-    ? []
-    : await db
+  const adQuery = !wantAds
+    ? Promise.resolve([])
+    : db
         .select({
           id: adsT.id,
           brand: brandsT.name,
@@ -176,15 +187,24 @@ export async function getFeed(
             ...(brandSlug !== "all" ? [eq(brandsT.slug, brandSlug)] : []),
             ...(formats.length ? [inArray(adsT.format, formats)] : []),
             ...(sinceUtc ? [gte(adsT.lastSeen, jstDateStr(sinceUtc))] : []),
+            ...(qPattern
+              ? [or(ilike(adsT.adCopy, qPattern), ilike(brandsT.name, qPattern), ilike(brandAccounts.handle, qPattern))]
+              : []),
           ),
         )
         .orderBy(desc(adsT.daysActive))
         .limit(adLimit);
 
-  const postMedia = await firstMediaByOwner("post", postRows.map((p) => p.id));
-  const adMedia = await firstMediaByOwner("ad", adRows.map((a) => a.id));
-  const postMediaCount = await mediaCountByOwner("post", postRows.map((p) => p.id));
-  const adMediaCount = await mediaCountByOwner("ad", adRows.map((a) => a.id));
+  // 게시물/광고는 서로 독립, 미디어 4종 조회도 서로 독립 — 직렬 6 라운드트립을 2단계로 줄인다.
+  const [postRows, adRows] = await Promise.all([postQuery, adQuery]);
+  const postIds = postRows.map((p) => p.id);
+  const adIds = adRows.map((a) => a.id);
+  const [postMedia, adMedia, postMediaCount, adMediaCount] = await Promise.all([
+    firstMediaByOwner("post", postIds),
+    firstMediaByOwner("ad", adIds),
+    mediaCountByOwner("post", postIds),
+    mediaCountByOwner("ad", adIds),
+  ]);
 
   const items: FeedItem[] = [
     ...postRows.map((p) => ({
@@ -214,7 +234,7 @@ export async function getFeed(
       mediaCount: adMediaCount.get(a.id) ?? 0,
     })),
   ];
-  items.sort((x, y) => (x.date ?? "") < (y.date ?? "") ? 1 : -1);
+  items.sort((x, y) => (y.date ?? "").localeCompare(x.date ?? ""));
   // 어느 쪽이든 상한까지 꽉 찼으면 더 있을 수 있다("더 보기" 노출 기준).
   const hasMore = postRows.length === postLimit || adRows.length === adLimit;
   return { items, hasMore };
@@ -374,7 +394,7 @@ export async function getBrandDetail(slug: string) {
       imageUrl: adMedia.get(a.id) ?? null,
     })),
   ];
-  items.sort((x, y) => ((x.date ?? "") < (y.date ?? "") ? 1 : -1));
+  items.sort((x, y) => (y.date ?? "").localeCompare(x.date ?? ""));
 
   return {
     brand,
@@ -657,8 +677,16 @@ export async function getPlatformMatrix(): Promise<PlatformMatrixRow[]> {
       .groupBy(adsT.brandAccountId),
   ]);
 
+  // 날짜 오름차순이라 마지막 행이 최신. 최신 스냅샷에 값이 없으면(어댑터가 일부 필드만 준 날)
+  // 이전에 알던 값을 유지한다 — null 로 덮으면 점수의 팔로워 항이 통째로 사라진다.
   const latestMetric = new Map<string, { followers: number | null; engagementRate: number | null }>();
-  for (const r of metricRows) latestMetric.set(r.accountId, { followers: r.followers ?? null, engagementRate: r.engagementRate ?? null });
+  for (const r of metricRows) {
+    const prev = latestMetric.get(r.accountId);
+    latestMetric.set(r.accountId, {
+      followers: r.followers ?? prev?.followers ?? null,
+      engagementRate: r.engagementRate ?? prev?.engagementRate ?? null,
+    });
+  }
   const postMap = new Map(postRows.map((r) => [r.accountId, r]));
   const adMap = new Map(adRows.map((r) => [r.accountId, r.activeAds]));
   const byBrand = new Map<string, PlatformMatrixRow>();
@@ -735,6 +763,15 @@ export async function getDataQualityStatus(): Promise<DataQualityStatus[]> {
 
 export async function getDashboardAlerts(limit = 5): Promise<DashboardAlert[]> {
   const [changes, quality] = await Promise.all([getRecentChanges(12), getDataQualityStatus()]);
+  return buildDashboardAlerts(changes, quality, limit);
+}
+
+// 이미 조회한 최근 변경/데이터 품질로 알림을 만든다 — 요약 loader 가 같은 쿼리를 두 번 돌리지 않게.
+export function buildDashboardAlerts(
+  changes: RecentChange[],
+  quality: DataQualityStatus[],
+  limit = 5,
+): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
   for (const q of quality.filter((q) => q.status !== "fresh")) {
     alerts.push({
@@ -781,6 +818,7 @@ export async function getSummary() {
     [prevWeekPosts],
     [runsToday],
     [runsYesterday],
+    brandsOverview,
   ] = await Promise.all([
     db.select({ n: sql<number>`count(*)::int` }).from(brandsT),
     db
@@ -810,23 +848,23 @@ export async function getSummary() {
           sql`${postsT.postedAt} < now() - interval '7 days'`,
         ),
       ),
+    // "오늘"은 JST 하루 경계 — /admin/runs 의 getRunStats 와 같은 기준이어야 두 화면 숫자가 일치한다.
     db
       .select({ n: sql<number>`count(*)::int` })
       .from(collectionRuns)
-      .where(and(eq(collectionRuns.status, "done"), gte(collectionRuns.startedAt, sql`now() - interval '1 day'`))),
+      .where(and(eq(collectionRuns.status, "done"), gte(collectionRuns.startedAt, jstDayStartUtc(0)))),
     db
       .select({ n: sql<number>`count(*)::int` })
       .from(collectionRuns)
       .where(
         and(
           eq(collectionRuns.status, "done"),
-          gte(collectionRuns.startedAt, sql`now() - interval '2 days'`),
-          sql`${collectionRuns.startedAt} < now() - interval '1 day'`,
+          gte(collectionRuns.startedAt, jstDayStartUtc(-1)),
+          lt(collectionRuns.startedAt, jstDayStartUtc(0)),
         ),
       ),
+    getBrandsOverview(),
   ]);
-
-  const brandsOverview = await getBrandsOverview();
 
   return {
     kpis: [
@@ -1301,6 +1339,7 @@ export async function getSimilarPosts(id: string, limit = 6) {
     .select({ id: postsT.id, caption: postsT.caption, format: postsT.format })
     .from(postsT)
     .where(and(eq(postsT.brandAccountId, base.brandAccountId), sql`${postsT.id} <> ${id}`))
+    .orderBy(desc(postsT.postedAt))
     .limit(limit);
   const media = await firstMediaByOwner("post", rows.map((r) => r.id));
   return rows.map((r) => ({ ...r, imageUrl: media.get(r.id) ?? null }));
@@ -1387,40 +1426,61 @@ export async function getFollowerGrowth() {
   const db = getDb();
   const rows = await db
     .select({
+      accountId: accountMetricsDaily.brandAccountId,
       date: accountMetricsDaily.date,
       platform: brandAccounts.platform,
       followers: accountMetricsDaily.followers,
     })
     .from(accountMetricsDaily)
     .innerJoin(brandAccounts, eq(accountMetricsDaily.brandAccountId, brandAccounts.id))
-    .where(gte(accountMetricsDaily.date, sql`current_date - 30`))
+    .where(and(gte(accountMetricsDaily.date, sql`current_date - 30`), isNotNull(accountMetricsDaily.followers)))
     .orderBy(accountMetricsDaily.date);
 
-  const totalByDate = new Map<string, number>();
+  // 날짜별 단순 합산은 어떤 계정의 스크래이프가 하루 빠지면 총합이 푹 꺼져 "-35%" 같은
+  // 가짜 변동을 만든다. 계정별로 마지막 관측값을 이월(forward-fill)해 매일 같은 계정
+  // 집합을 더하고, 증감률도 계정별 (마지막-처음) 의 합으로 계산한다.
+  const dates = [...new Set(rows.map((r) => r.date))].sort();
+  const byAccountDate = new Map<string, Map<string, number>>();
+  const platformOf = new Map<string, Platform>();
   for (const r of rows) {
     if (r.followers == null) continue;
-    totalByDate.set(r.date, (totalByDate.get(r.date) ?? 0) + r.followers);
+    if (!byAccountDate.has(r.accountId)) byAccountDate.set(r.accountId, new Map());
+    byAccountDate.get(r.accountId)!.set(r.date, r.followers);
+    platformOf.set(r.accountId, r.platform as Platform);
   }
-  const series = [...totalByDate.entries()]
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([date, total]) => ({ date, total }));
 
-  // 최신 날짜의 플랫폼별 팔로워 합
-  const latestDate = series.length ? series[series.length - 1].date : null;
-  const byPlatformMap = new Map<Platform, number>();
-  if (latestDate) {
-    for (const r of rows) {
-      if (r.date !== latestDate || r.followers == null) continue;
-      byPlatformMap.set(r.platform as Platform, (byPlatformMap.get(r.platform as Platform) ?? 0) + r.followers);
+  const series: { date: string; total: number }[] = [];
+  const carried = new Map<string, number>(); // accountId → 마지막 관측 팔로워
+  for (const date of dates) {
+    for (const [accountId, perDate] of byAccountDate) {
+      const v = perDate.get(date);
+      if (v != null) carried.set(accountId, v);
     }
+    let total = 0;
+    for (const v of carried.values()) total += v;
+    series.push({ date, total });
+  }
+
+  // 플랫폼별 최신 팔로워(계정별 마지막 관측값 합)
+  const byPlatformMap = new Map<Platform, number>();
+  for (const [accountId, v] of carried) {
+    const platform = platformOf.get(accountId)!;
+    byPlatformMap.set(platform, (byPlatformMap.get(platform) ?? 0) + v);
   }
   const byPlatform = [...byPlatformMap.entries()]
     .map(([platform, followers]) => ({ platform, followers }))
     .sort((a, b) => b.followers - a.followers);
 
-  const first = series.length ? series[0].total : 0;
-  const last = series.length ? series[series.length - 1].total : 0;
-  const deltaPct = series.length >= 2 && first > 0 ? Math.round(((last - first) / first) * 1000) / 10 : null;
+  // 증감률: 관측이 2회 이상인 계정만, 각 계정의 (마지막 - 처음) 합 / 처음 합
+  let firstSum = 0;
+  let lastSum = 0;
+  for (const perDate of byAccountDate.values()) {
+    if (perDate.size < 2) continue;
+    const ds = [...perDate.keys()].sort();
+    firstSum += perDate.get(ds[0])!;
+    lastSum += perDate.get(ds[ds.length - 1])!;
+  }
+  const deltaPct = firstSum > 0 ? Math.round(((lastSum - firstSum) / firstSum) * 1000) / 10 : null;
 
   return { series, byPlatform, deltaPct };
 }

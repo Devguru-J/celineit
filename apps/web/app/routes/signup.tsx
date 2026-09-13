@@ -1,7 +1,7 @@
 // 회원가입: 가입 코드(SIGNUP_CODE)를 아는 사람만 계정 생성 가능.
 // 서버 action 이 코드 검증 후 Admin API 로 생성 + 자동 로그인. (게이트 제외 경로)
 import { Form, Link, redirect, useActionData, useNavigation } from "react-router";
-import { sessionCookies, signUpWithCode } from "~/lib/auth.server";
+import { sessionCookies, signUpWithCode, signupRateLimited } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 회원가입" }];
@@ -17,6 +17,8 @@ export async function action({ request }: { request: Request }) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "이메일 형식이 올바르지 않습니다." };
   if (password.length < 8) return { error: "비밀번호는 8자 이상이어야 합니다." };
   if (password !== passwordConfirm) return { error: "비밀번호가 서로 일치하지 않습니다." };
+  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for") ?? "unknown";
+  if (signupRateLimited(ip)) return { error: "시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요." };
 
   const result = await signUpWithCode(email, password, code);
   if (!result.ok) return { error: result.error };

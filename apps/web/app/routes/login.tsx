@@ -7,9 +7,16 @@ export function meta() {
   return [{ title: "Celine Intelligence · 로그인" }];
 }
 
-// open redirect 방지: 사이트 내부 경로만 허용
+// open redirect 방지: 사이트 내부 경로만 허용.
+// 브라우저는 http(s) URL 에서 "\\" 를 "/" 로 정규화하므로 "/\\evil.com" 도 외부로 빠진다 — 역슬래시 금지.
 function safeNext(v: string | null): string {
-  return v && v.startsWith("/") && !v.startsWith("//") ? v : "/";
+  if (!v || !v.startsWith("/") || v.startsWith("//") || /[\\]/.test(v)) return "/";
+  try {
+    const u = new URL(v, "https://internal.invalid");
+    return u.origin === "https://internal.invalid" ? u.pathname + u.search : "/";
+  } catch {
+    return "/";
+  }
 }
 
 export async function action({ request }: { request: Request }) {

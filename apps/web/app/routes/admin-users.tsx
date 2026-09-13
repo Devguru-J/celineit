@@ -2,13 +2,14 @@
 // service key 는 서버(action/loader)에서만 사용된다. 대시보드 접속 불필요.
 import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import { Panel } from "~/components/ui";
-import { createUser, deleteUser, listUsers, updateUserPassword } from "~/lib/auth.server";
+import { createUser, deleteUser, listUsers, requireAdmin, updateUserPassword } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Celine Intelligence · 계정 관리" }];
 }
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
+  requireAdmin(request);
   try {
     const users = await listUsers();
     return { users, configured: true as const };
@@ -19,6 +20,7 @@ export async function loader() {
 }
 
 export async function action({ request }: { request: Request }) {
+  requireAdmin(request);
   const form = await request.formData();
   const intent = String(form.get("intent") ?? "");
 

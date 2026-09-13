@@ -1,0 +1,1 @@
+CREATE INDEX "collection_runs_platform_started_at_idx" ON "collection_runs" USING btree ("platform","started_at" desc);

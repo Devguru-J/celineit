@@ -3,7 +3,7 @@ import { BarChart, Card, CardHeader, KpiDelta, PlatformChip } from "~/components
 import { BrandLogo } from "~/lib/brand-assets";
 import { ACTIVE_PLATFORMS } from "@celine/shared";
 import {
-  getDashboardAlerts,
+  buildDashboardAlerts,
   getDataQualityStatus,
   getFollowerGrowth,
   getPlatformMatrix,
@@ -17,15 +17,16 @@ export function meta() {
 }
 
 export async function loader() {
-  const [summary, recent, followerGrowth, matrix, alerts, dataQuality] = await Promise.all([
+  // 최근 변경(12건)과 데이터 품질은 한 번만 조회하고, 알림과 타임라인(상위 6건)을 거기서 파생한다.
+  const [summary, changes, followerGrowth, matrix, dataQuality] = await Promise.all([
     getSummary(),
-    getRecentChanges(),
+    getRecentChanges(12),
     getFollowerGrowth(),
     getPlatformMatrix(),
-    getDashboardAlerts(),
     getDataQualityStatus(),
   ]);
-  return { ...summary, recent, followerGrowth, matrix, alerts, dataQuality };
+  const alerts = buildDashboardAlerts(changes, dataQuality);
+  return { ...summary, recent: changes.slice(0, 6), followerGrowth, matrix, alerts, dataQuality };
 }
 
 // 이벤트 타입별 표시.

@@ -3,7 +3,7 @@ import {
   type NormalizedResult,
   emptyResult,
 } from "@celine/shared";
-import { num, pick, str, type AccountInput, type PlatformAdapter } from "./types";
+import { capResultsLimit, num, pick, str, type AccountInput, type PlatformAdapter } from "./types";
 
 // Instagram 스크래퍼 (예: apify/instagram-scraper).
 // 오가닉 포스트 + 계정 지표(팔로워) 수집.
@@ -13,12 +13,14 @@ export const instagramAdapter: PlatformAdapter = {
 
   buildInput(account: AccountInput, opts) {
     const username = account.handle.replace(/^@/, "");
+    const extra = (account.apifyInput ?? {}) as Record<string, unknown>;
     return {
       directUrls: [account.profileUrl ?? `https://www.instagram.com/${username}/`],
       resultsType: "posts",
-      resultsLimit: opts.maxItems,
       addParentData: true,
-      ...(account.apifyInput ?? {}),
+      ...extra,
+      // apify_input 이 상한을 키우지 못하게 마지막에 확정(작게 줄이는 건 허용).
+      resultsLimit: capResultsLimit(extra.resultsLimit, opts.maxItems),
     };
   },
 

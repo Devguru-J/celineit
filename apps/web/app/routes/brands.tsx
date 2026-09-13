@@ -42,10 +42,10 @@ export default function Brands() {
           <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">Brand registry</span>
           <p className="mt-1 font-body-md text-body-md text-on-surface-variant">모니터링 중인 브랜드 {brands.length}개</p>
         </div>
-        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-body-sm text-body-sm font-semibold text-on-primary shadow-[0_10px_20px_rgba(28,28,28,0.18)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 sm:w-auto">
-          <span className="material-symbols-outlined notranslate text-[18px]">add</span>
-          브랜드 추가
-        </button>
+        {/* 브랜드 등록은 수집기 seed(apps/collector/src/seed.ts) 로 관리 — 화면 내 추가 흐름은 없음 */}
+        <span className="font-label-muted text-label-muted text-on-surface-variant">
+          브랜드 등록·변경은 수집기 seed 로 관리합니다
+        </span>
       </Card>
 
       <Card>

@@ -82,6 +82,8 @@ export const collectionRuns = pgTable(
     index("collection_runs_apify_run_id_idx").on(t.apifyRunId),
     // FK 조인 + brand_accounts cascade delete 대상.
     index("collection_runs_brand_account_idx").on(t.brandAccountId),
+    // 요약 화면 데이터 품질(플랫폼별 최신 run 1건: DISTINCT ON platform ORDER BY started_at DESC).
+    index("collection_runs_platform_started_at_idx").on(t.platform, desc(t.startedAt)),
   ],
 );
 

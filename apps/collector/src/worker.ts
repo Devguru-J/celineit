@@ -1,14 +1,13 @@
-// Cloudflare Worker (운영): Cron → Queue → 수집 → 적재.
-// - scheduled(): 매일 활성 계정을 Queue 로 발행 (플랫폼별 주기 반영)
-// - queue(): 계정 1개씩 Apify 실행 + 적재
-// - fetch(): Apify 완료 webhook 수신 엔드포인트(향후 비동기 전환용) + 헬스체크
+// Cloudflare Worker (운영): Cron → Apify run 시작 → 완료 webhook/폴링 → 적재. (Queue 미사용 — 무료 플랜)
+// - scheduled(): 일일 cron 은 활성 계정의 Apify run 을 시작만 하고, 분단위 cron 은 밀린 run 을 reconcile
+// - fetch(): /manual-collect(관리 화면), /webhook(Apify 완료 알림), /health
 //
 // DB 연결은 Cloudflare Hyperdrive 바인딩으로 Supabase Postgres 에 접속한다.
-import { brandAccounts, brands, collectionRuns, createDb } from "@celine/db";
-import { ACTIVE_PLATFORMS, type Platform } from "@celine/shared";
-import { and, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
+import { brandAccounts, collectionRuns, createDb } from "@celine/db";
+import { ACTIVE_PLATFORMS, META_ADS_DEFAULT_MAX_ITEMS, jstDate, type Platform } from "@celine/shared";
+import { and, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { ApifyClient } from "./apify";
-import { finishCollect, startCollect, type CollectAccount } from "./collect";
+import { CLAIM_LEASE_MINUTES, finishCollect, startCollect, type CollectAccount } from "./collect";
 
 export interface Env {
   HYPERDRIVE: { connectionString: string };
@@ -77,17 +76,31 @@ async function startMany(
   const apify = new ApifyClient(env.APIFY_TOKEN);
   const webhookUrl = webhookUrlOf(env);
   // Meta Ads 는 비용이 높아 플랫폼별로 더 낮은 수집 상한을 적용한다.
-  const metaMaxItems = envInt(env.META_ADS_MAX_ITEMS, 15);
-  await Promise.all(
+  const metaMaxItems = envInt(env.META_ADS_MAX_ITEMS, META_ADS_DEFAULT_MAX_ITEMS);
+  const results = await Promise.all(
     accounts.map((account) =>
       startCollect(db, apify, account, {
         date,
         maxItems: account.platform === "meta_ads" ? metaMaxItems : maxItems,
         actorOverride: actorFor(env, account.platform),
         webhookUrl,
-      }).catch(() => undefined),
+      }).catch((err) => {
+        console.error("[collect] startCollect threw", { accountId: account.id, platform: account.platform, err: String(err) });
+        return undefined;
+      }),
     ),
   );
+  const started = results.filter((r) => r && !r.error && !r.skipped).length;
+  const skipped = results.filter((r) => r?.skipped).length;
+  const failed = results.filter((r) => r?.error).length;
+  console.log("[collect] startMany", { date, accounts: accounts.length, started, skipped, failed });
+}
+
+/** reconciler/webhook 이 run 을 시작할 때 쓴 상한을 알 수 없으므로 env 기준 상한을 힌트로 넘긴다. */
+function maxItemsHintFor(env: Env, platform: string): number {
+  return platform === "meta_ads"
+    ? envInt(env.META_ADS_MAX_ITEMS, META_ADS_DEFAULT_MAX_ITEMS)
+    : envInt(env.MAX_ITEMS, 50);
 }
 
 // 폴링 기반 안전망(webhook 유실/버스트 대비). status='running' + apify_run_id 인 run 을
@@ -110,14 +123,20 @@ async function reconcilePending(env: Env, limit = 4): Promise<{ checked: number;
         sql`${collectionRuns.startedAt} < now() - interval '12 hours'`,
       ),
     );
+  // 다른 경로(webhook)가 리스를 잡고 처리 중인 run(finished_at 이 최근)은 후보에서 제외한다.
+  // 안 그러면 잘린 적재의 잔해가 가장 오래된 행으로 매 tick 상위 limit 개를 독점해 신규 run 이 굶는다.
   const rows = await db
-    .select({ apifyRunId: collectionRuns.apifyRunId })
+    .select({ apifyRunId: collectionRuns.apifyRunId, platform: collectionRuns.platform })
     .from(collectionRuns)
     .where(
       and(
         eq(collectionRuns.status, "running"),
         isNotNull(collectionRuns.apifyRunId),
         gt(collectionRuns.startedAt, sql`now() - interval '6 hours'`),
+        or(
+          isNull(collectionRuns.finishedAt),
+          lt(collectionRuns.finishedAt, sql`now() - interval '${sql.raw(String(CLAIM_LEASE_MINUTES))} minutes'`),
+        ),
       ),
     )
     .orderBy(collectionRuns.startedAt)
@@ -127,17 +146,22 @@ async function reconcilePending(env: Env, limit = 4): Promise<{ checked: number;
   for (const r of rows) {
     const runId = r.apifyRunId;
     if (!runId) continue;
-    const run = await apify.getRun(runId).catch(() => null);
+    const run = await apify.getRun(runId).catch((err) => {
+      console.warn("[collect] getRun failed", { apifyRunId: runId, err: String(err) });
+      return null;
+    });
     if (!run) continue;
+    const maxItemsHint = maxItemsHintFor(env, r.platform);
     if (run.status === "SUCCEEDED") {
-      const res = await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: true });
-      if (res.ok) done++;
+      const res = await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: true, maxItemsHint });
+      if (res.ok && !res.skipped) done++;
     } else if (TERMINAL_FAIL.has(run.status)) {
-      await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: false, statusText: run.status });
+      await finishCollect(db, apify, { apifyRunId: runId, datasetId: run.datasetId, succeeded: false, statusText: run.status, maxItemsHint });
       done++;
     }
     // READY/RUNNING 등은 다음 tick 으로.
   }
+  if (rows.length > 0) console.log("[collect] reconcile", { checked: rows.length, done });
   return { checked: rows.length, done };
 }
 
@@ -150,7 +174,7 @@ export default {
       return;
     }
     const db = createDb(env.HYPERDRIVE.connectionString);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = jstDate();
     const epochDay = Math.floor(Date.now() / 86_400_000);
 
     const rows = await db
@@ -206,7 +230,7 @@ export default {
       if (ids.length > 100) return json({ ok: false, error: "Too many accounts selected. Limit is 100." }, 400);
 
       const db = createDb(env.HYPERDRIVE.connectionString);
-      const today = new Date().toISOString().slice(0, 10);
+      const today = jstDate();
       const maxItems = parseMaxItems(body.maxItems, envInt(env.MAX_ITEMS, 50));
       const rows = await db
         .select({
@@ -265,13 +289,22 @@ export default {
       const db = createDb(env.HYPERDRIVE.connectionString);
       const apify = new ApifyClient(env.APIFY_TOKEN);
       // 즉시 202 로 Apify 에 응답하고, 적재는 백그라운드로(데이터는 이미 준비됨 → 짧음).
+      // 플랫폼은 run 조회 후에야 알 수 있으므로 finishCollect 안에서 힌트를 고르게 한다.
       ctx.waitUntil(
-        finishCollect(db, apify, {
-          apifyRunId,
-          datasetId: payload.resource?.defaultDatasetId,
-          succeeded,
-          statusText: String(status),
-        }).catch(() => undefined),
+        (async () => {
+          const [row] = await db
+            .select({ platform: collectionRuns.platform })
+            .from(collectionRuns)
+            .where(eq(collectionRuns.apifyRunId, apifyRunId))
+            .limit(1);
+          return finishCollect(db, apify, {
+            apifyRunId,
+            datasetId: payload.resource?.defaultDatasetId,
+            succeeded,
+            statusText: String(status),
+            maxItemsHint: row ? maxItemsHintFor(env, row.platform) : undefined,
+          });
+        })().catch((err) => console.error("[collect] webhook finish threw", { apifyRunId, err: String(err) })),
       );
       return new Response("accepted", { status: 202 });
     }
